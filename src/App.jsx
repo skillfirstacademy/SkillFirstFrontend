@@ -11,10 +11,10 @@ import LoginPage from "./Pages/LoginPage";
 import SignupPage from "./Pages/SignupPage";
 
 import CourseDetailsPage from "./Pages/CourseDetailsPage";
-import English from "./Componnets/English";
-import GraphicDesgine from "./Componnets/GraphicDesgine";
-import VideoEditing from "./Componnets/VideoEditing";
-import UiUx from "./Componnets/UiUx";
+import English from "./Componnets/English/English";
+import GraphicDesgine from "./Componnets/GraphicDesgine/GraphicDesgine";
+import VideoEditing from "./Componnets/VideoEditing/VideoEditing";
+import UiUx from "./Componnets/UIUx/UiUx";
 
 import "./App.css";
 

@@ -1,10 +1,10 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 
-import English from "../Componnets/English";
-import GraphicDesign from "../Componnets/GraphicDesgine";
-import UiUx from "../Componnets/UiUx";
-import VideoEditing from "../Componnets/VideoEditing";
+import English from "../Componnets/English/English";
+import GraphicDesign from "../Componnets/GraphicDesgine/GraphicDesgine";
+import UiUx from "../Componnets/UIUx/UiUx";
+import VideoEditing from "../Componnets/VideoEditing/VideoEditing";
 
 function CourseDetailsPage() {
   const { courseId } = useParams();
