@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { showSuccess, showError } from "../../Componnets/AppToaster";
 import adminApi from "../../api/adminApi";
+import VideoPlayer from '../../Componnets/VideoPlayer';
 
 function AllVideos() {
   const [courses, setCourses] = useState([]);
@@ -36,16 +38,15 @@ function AllVideos() {
   const fetchVideos = async (courseId, stage = "all") => {
     setVideosLoading(true);
     try {
-      const url = stage === "all" 
+      const url = stage === "all"
         ? `/videos/course/${courseId}`
         : `/videos/course/${courseId}?stage=${stage}`;
-      
+
       const res = await adminApi.get(url);
       setVideos(res.data);
     } catch (err) {
       if (err.response?.status === 404) {
         setVideos([]);
-        showError("No videos found for this course");
       } else {
         showError(err.response?.data?.message || "Failed to fetch videos");
       }
@@ -67,14 +68,14 @@ function AllVideos() {
     }
   };
 
-  const handleDeleteVideo = async (videoId, e) => {
+  const handleDeleteVideo = async (courseId,videoId, e) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this video?")) {
       return;
     }
 
     try {
-      await adminApi.delete(`/videos/${videoId}`);
+      await adminApi.delete(`/videos/${courseId}/${videoId}`);
       showSuccess("Video deleted successfully");
       fetchVideos(selectedCourse._id, selectedStage);
     } catch (err) {
@@ -93,12 +94,13 @@ function AllVideos() {
   };
 
   const handleVideoClick = (video) => {
+    console.log("Playing video:", video);
     setPlayingVideo(video);
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       await adminApi.put(`/videos/${editingVideo._id}`, editForm);
       showSuccess("Video updated successfully");
@@ -109,23 +111,12 @@ function AllVideos() {
     }
   };
 
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes || bytes === 0) return 'N/A';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const getStreamUrl = (videoId) => {
-    const token = localStorage.getItem('token');
-    return `http://localhost:5000/api/videos/${videoId}/stream`;
   };
 
   return (
@@ -148,7 +139,7 @@ function AllVideos() {
               <h2 className="text-lg font-semibold text-purple-900 mb-4">
                 Courses
               </h2>
-              
+
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700 mx-auto"></div>
@@ -171,7 +162,7 @@ function AllVideos() {
                           ? "text-purple-200"
                           : "text-purple-500"
                       }`}>
-                        {course.category}
+                        {course.description?.substring(0, 30)}...
                       </div>
                     </button>
                   ))}
@@ -211,7 +202,7 @@ function AllVideos() {
                   <h2 className="text-2xl font-bold mb-2">
                     {selectedCourse.title}
                   </h2>
-                  <p className="text-purple-200">{selectedCourse.category}</p>
+                  <p className="text-purple-200">{selectedCourse.description}</p>
                 </div>
 
                 {/* Stage Filter */}
@@ -306,35 +297,17 @@ function AllVideos() {
                                 {video.stage}
                               </span>
                             </div>
-                            
+
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">
                               {video.title}
                             </h3>
-                            
+
                             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                              {video.duration && (
-                                <div className="flex items-center gap-1">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                  {formatDuration(video.duration)}
-                                </div>
-                              )}
-                              
-                              {video.fileSize && (
-                                <div className="flex items-center gap-1">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                  </svg>
-                                  {formatFileSize(video.fileSize)}
-                                </div>
-                              )}
-                              
                               <div className="flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
-                                {video.codec || 'N/A'}
+                                {formatFileSize(video.size)}
                               </div>
                             </div>
 
@@ -357,9 +330,9 @@ function AllVideos() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
-                            
+
                             <button
-                              onClick={(e) => handleDeleteVideo(video._id, e)}
+                              onClick={(e) => handleDeleteVideo(selectedCourse._id,video._id, e)}
                               className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
                               title="Delete"
                             >
@@ -386,8 +359,8 @@ function AllVideos() {
             <h2 className="text-2xl font-bold text-purple-900 mb-4">
               Edit Video
             </h2>
-            
-            <div className="space-y-4">
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-purple-800 mb-2">
                   Video Title
@@ -395,7 +368,7 @@ function AllVideos() {
                 <input
                   type="text"
                   value={editForm.title}
-                  onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                   className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   required
                 />
@@ -407,7 +380,7 @@ function AllVideos() {
                 </label>
                 <select
                   value={editForm.stage}
-                  onChange={(e) => setEditForm({...editForm, stage: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, stage: e.target.value })}
                   className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   required
                 >
@@ -425,7 +398,7 @@ function AllVideos() {
                   type="number"
                   min="1"
                   value={editForm.order}
-                  onChange={(e) => setEditForm({...editForm, order: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, order: e.target.value })}
                   className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   required
                 />
@@ -440,63 +413,29 @@ function AllVideos() {
                   Cancel
                 </button>
                 <button
-                  onClick={handleEditSubmit}
+                  type="submit"
                   className="flex-1 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition font-medium"
                 >
                   Save Changes
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Video Player Modal */}
       {playingVideo && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-5xl">
-            <div className="bg-black rounded-xl overflow-hidden">
-              <div className="flex justify-between items-center p-4 bg-gray-900">
-                <h3 className="text-white text-lg font-semibold">
-                  {playingVideo.title}
-                </h3>
-                <button
-                  onClick={() => setPlayingVideo(null)}
-                  className="text-white hover:text-red-500 transition"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <video
-                controls
-                autoPlay
-                className="w-full"
-                style={{ maxHeight: '70vh' }}
-                src={getStreamUrl(playingVideo._id)}
-              >
-                Your browser does not support the video tag.
-              </video>
-
-              <div className="p-4 bg-gray-900 text-white">
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="px-3 py-1 bg-purple-600 rounded-full capitalize">
-                    {playingVideo.stage}
-                  </span>
-                  <span>Order: #{playingVideo.order}</span>
-                  {playingVideo.duration && (
-                    <span>Duration: {formatDuration(playingVideo.duration)}</span>
-                  )}
-                  {playingVideo.fileSize && (
-                    <span>Size: {formatFileSize(playingVideo.fileSize)}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <VideoPlayer
+          videoUrl={`http://localhost:5000/api/videos/${playingVideo._id}/stream`}
+          title={playingVideo.title}
+          onClose={() => setPlayingVideo(null)}
+          onError={(err) => {
+            console.error("Video player error:", err);
+            showError("Failed to play video");
+            setPlayingVideo(null);
+          }}
+        />
       )}
     </div>
   );
