@@ -21,6 +21,8 @@ import UiUx from "./Componnets/UIUx/UiUx";
 import Dashboard from "./Pages/student/Dashboard";
 import StudentRoute from "./Routes/StudentRoute";
 
+// Import AdminLayout instead of individual admin pages at the top level
+import AdminLayout from "./Pages/admin/Adminlayout";
 import AdminDashboard from "./Pages/admin/AdminDashboard";
 import AdminRoute from "./Routes/AdminRoute";
 import AddCourses from "./Pages/admin/AddCourses";
@@ -72,114 +74,29 @@ function App() {
           }
         />
 
-        {/* ADMIN ONLY ROUTES */}
+        {/* ADMIN ROUTES - All nested under AdminLayout */}
         <Route
-          path="/admin/dashboard"
+          path="/admin"
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <AdminLayout />
             </AdminRoute>
           }
-        />
-
-        <Route
-          path="/admin/add-courses"
-          element={
-            <AdminRoute>
-              <AddCourses />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/add-students"
-          element={
-            <AdminRoute>
-              <AddStudents />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/add-test"
-          element={
-            <AdminRoute>
-              <AddTest />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/add-videos"
-          element={
-            <AdminRoute>
-              <AddVideos />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/all-courses"
-          element={
-            <AdminRoute>
-              <AllCourses />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/all-students"
-          element={
-            <AdminRoute>
-              <AllStudents />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/all-test"
-          element={
-            <AdminRoute>
-              <AllTest />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/all-users"
-          element={
-            <AdminRoute>
-              <AllUsers />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/all-videos"
-          element={
-            <AdminRoute>
-              <AllVideos />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/enroll-students"
-          element={
-            <AdminRoute>
-              <EnrollStudents />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/make-admin"
-          element={
-            <AdminRoute>
-              <MakeAdmin />
-            </AdminRoute>
-          }
-        />
+        >
+          {/* Nested admin routes - these render inside AdminLayout's <Outlet /> */}
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="add-courses" element={<AddCourses />} />
+          <Route path="all-courses" element={<AllCourses />} />
+          <Route path="add-students" element={<AddStudents />} />
+          <Route path="all-students" element={<AllStudents />} />
+          <Route path="enroll-students" element={<EnrollStudents />} />
+          <Route path="all-users" element={<AllUsers />} />
+          <Route path="make-admin" element={<MakeAdmin />} />
+          <Route path="add-test" element={<AddTest />} />
+          <Route path="all-test" element={<AllTest />} />
+          <Route path="add-videos" element={<AddVideos />} />
+          <Route path="all-videos" element={<AllVideos />} />
+        </Route>
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
