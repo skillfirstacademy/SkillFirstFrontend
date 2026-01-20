@@ -4,17 +4,19 @@ import Navbar from "./Componnets/Navbar";
 import Footer from "./Componnets/Footer";
 
 import HomePage from "./Pages/HomePage";
-import AboutPage from "./Pages/AboutPage"
+import AboutPage from "./Pages/AboutPage";
 import AccountPage from "./Pages/AccountPage";
 import CoursePage from "./Pages/CoursePage";
 import LoginPage from "./Pages/LoginPage";
 import SignupPage from "./Pages/SignupPage";
 
 import CourseDetailsPage from "./Pages/CourseDetailsPage";
-import English from "./Componnets/English";
-import GraphicDesgine from "./Componnets/GraphicDesgine";
-import VideoEditing from "./Componnets/VideoEditing";
-import UiUx from "./Componnets/UiUx";
+import English from "./Componnets/English/English";
+import GraphicDesgine from "./Componnets/GraphicDesgine/GraphicDesgine";
+import VideoEditing from "./Componnets/VideoEditing/VideoEditing";
+import UiUx from "./Componnets/UIUx/UiUx";
+import NotFound from "./Pages/NotFoundPage";
+import CourseContentPage from "./Pages/CourseContentPage";
 
 import "./App.css";
 import AppToaster from "./Componnets/AppToaster";
@@ -39,6 +41,11 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/course/:courseId" element={<CourseDetailsPage />} />
         <Route path="/english" element={<English />} />
+        <Route path="/graphicdesgine" element={<GraphicDesgine />} />
+        <Route path="/videoediting" element={<VideoEditing />} />
+        <Route path="/uiux" element={<UiUx />} />
+        <Route path="*" element={<NotFound />} />
+        <Route path="/coursecontent/:coursecontentId" element={<CourseContentPage />} />
         <Route path="/graphicdesgine" element={<GraphicDesgine />} />
         <Route path="/videoediting" element={<VideoEditing />} />
         <Route path="/uiux" element={<UiUx />} />
