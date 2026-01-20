@@ -1,13 +1,69 @@
-// LoginPage.jsx
-import React from 'react';
+import React, { useState } from 'react';
+import api from "../api/axios";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { loginSuccess } from "../Features/authSlice";
+import AppToaster from "../Componnets/AppToaster";
+import { showSuccess, showError } from "../Componnets/AppToaster";
+import eye from "../assets/eye.svg"
+import closeeye from "../assets/eye (2).svg"
+// import { EyeClosed } from 'lucide-react';
+
+// import { showError, showSuccess } from "../utils/toast";
 
 function LoginPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const handleGoogleSignIn = () => {
-    // TODO: Implement Google OAuth login here
-    // e.g. using @react-oauth/google or Firebase
-    console.log("Google Sign-In clicked");
-    alert("Google Sign-In functionality will be implemented here");
+    window.location.href = "http://localhost:5000/users/api/google";
   };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    // ✅ get or create deviceId ONCE
+    let deviceId = localStorage.getItem("deviceId");
+
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+    }
+
+    // ✅ now send it
+    const res = await api.post("/login", {
+      email,
+      password,
+      deviceId,
+    });
+
+    dispatch(
+      loginSuccess({
+        user: res.data.user,
+        accessToken: res.data.accessToken,
+      })
+    );
+
+    showSuccess("Login successful");
+    navigate("/");
+  } catch (err) {
+    console.error(err);
+
+    const message =
+      err.response?.data?.message || "Login failed";
+
+    showError(message);
+  }
+};
+
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -48,9 +104,11 @@ function LoginPage() {
               <input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="skill1academy@gamil.com"
                 className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                value={email}
                 required
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -58,20 +116,38 @@ function LoginPage() {
               <label htmlFor="password" className="block text-sm font-medium text-purple-800 mb-1">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-                required
-              />
+              <div className='relative'>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="
+                    absolute inset-y-0 right-3
+                    flex items-center
+                    text-gray-500 hover:text-purple-700
+                  "
+                  aria-label="Toggle password visibility"
+                >
+                  <img
+                    src={showPassword ? closeeye : eye}
+                    alt="toggle password"
+                  />
+
+                </button>
+
+              </div>
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center text-purple-700">
-                <input type="checkbox" className="h-4 w-4 text-purple-600 border-purple-300 rounded mr-2" />
-                Remember me
-              </label>
+
               <a href="/forgot-password" className="text-purple-700 hover:underline font-medium">
                 Forgot password?
               </a>
@@ -80,6 +156,7 @@ function LoginPage() {
             <button
               type="submit"
               className="w-full bg-purple-700 text-white font-semibold py-3.5 rounded-lg hover:bg-purple-800 transition duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              onClick={handleSubmit}
             >
               Sign In
             </button>

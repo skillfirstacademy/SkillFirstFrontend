@@ -1,27 +1,97 @@
 // SignupPage.jsx
-import React from 'react';
+import React, { useState } from "react";
+import api from "../api/axios";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { loginSuccess } from "../Features/authSlice";
+import { showSuccess, showError } from "../Componnets/AppToaster";
+import eye from "../assets/eye.svg";
+import closeeye from "../assets/eye (2).svg";
 
 function SignupPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // ✅ state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [dob, setDob] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // ✅ Google signup (same as login)
   const handleGoogleSignUp = () => {
-    // TODO: Implement Google OAuth signup here
-    // Usually same flow as login — Google returns user data
-    console.log("Google Sign-Up clicked");
-    alert("Google Sign-Up functionality will be implemented here");
+    window.location.href = "http://localhost:5000/users/api/google";
+  };
+
+  // ✅ Signup submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (password !== confirmPassword) {
+      showError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const deviceId =
+        localStorage.getItem("deviceId") || crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+
+      const res = await api.post("/register", {
+        name,
+        email,
+        mobile,
+        dob,
+        password,
+        deviceId,
+      });
+
+      /**
+       * IMPORTANT:
+       * If backend returns user + token → auto-login
+       * If backend returns only message → redirect to login
+       */
+
+      if (res.data.user && res.data.accessToken) {
+        dispatch(
+          loginSuccess({
+            user: res.data.user,
+            accessToken: res.data.accessToken,
+          })
+        );
+      }
+
+      showSuccess("Account created successfully");
+      navigate("/login");
+    } catch (err) {
+      showError(err.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen  flex items-center justify-center px-4 sm:px-6 lg:px-8 mt-10 mb-10">
-      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 mt-10 mb-10">
+      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-        {/* Left Side - Decorative */}
+        {/* LEFT SIDE */}
         <div className="hidden lg:flex flex-col items-center justify-center text-center">
           <div className="mb-8">
-            <h2 className="text-4xl font-bold text-purple-800">Join SkillFirst Today</h2>
+            <h2 className="text-4xl font-bold text-purple-800">
+              Join SkillFirst Today
+            </h2>
             <p className="text-lg text-purple-600 mt-3">
               Start your journey with expert courses & AI-powered learning
             </p>
           </div>
-          <div className="w-full max-w-md rounded-2xl overflow-hidden ">
+          <div className="w-full max-w-md rounded-2xl overflow-hidden">
             <img
               src="https://thumbs.dreamstime.com/b/remote-learning-kid-studying-computer-student-online-home-education-personal-distance-teacher-virtual-school-utter-vector-201406968.jpg"
               alt="Student learning online"
@@ -29,75 +99,150 @@ function SignupPage() {
             />
           </div>
           <p className="mt-8 text-purple-500 text-sm">
-            Already have an account? <a href="/login" className="text-purple-700 font-medium hover:underline">Sign in</a>
+            Already Registered?{" "}
+            <a href="/login" className="text-purple-700 font-medium hover:underline">
+              Log in
+            </a>
           </p>
         </div>
 
-        {/* Right Side - Form */}
+        {/* RIGHT SIDE */}
         <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-10 border border-purple-100">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-purple-900">Create Account</h1>
-            <p className="text-purple-600 mt-2">Sign up or use Google to get started</p>
+            <h1 className="text-3xl font-bold text-purple-900">
+              Create Account
+            </h1>
+            <p className="text-purple-600 mt-2">
+              Sign up or use Google to get started
+            </p>
           </div>
 
-          <form className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-purple-800 mb-1">
-                Full Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                placeholder="John Doe"
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-                required
-              />
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Two Column Layout for Name & Email */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="John Doe"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-1">
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Two Column Layout for Mobile & DOB */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-1">
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  placeholder="9876543210"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  pattern="[0-9]{10}"
+                  maxLength={10}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-1">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-purple-800 mb-1">
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-purple-800 mb-1">
+              <label className="block text-sm font-medium text-purple-800 mb-1">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg pr-12"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-purple-700"
+                  aria-label="Toggle password visibility"
+                >
+                  <img
+                    src={showPassword ? closeeye : eye}
+                    alt="toggle password"
+                    className="w-5 h-5"
+                  />
+                </button>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-purple-800 mb-1">
+              <label className="block text-sm font-medium text-purple-800 mb-1">
                 Confirm Password
               </label>
-              <input
-                id="confirm-password"
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg pr-12"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-purple-700"
+                  aria-label="Toggle confirm password visibility"
+                >
+                  <img
+                    src={showConfirmPassword ? closeeye : eye}
+                    alt="toggle password"
+                    className="w-5 h-5"
+                  />
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-purple-700 text-white font-semibold py-3.5 rounded-lg hover:bg-purple-800 transition duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              disabled={loading}
+              className="w-full bg-purple-700 text-white font-semibold py-3.5 rounded-lg hover:bg-purple-800 transition shadow-md disabled:opacity-60"
             >
-              Create Account
+              {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
@@ -107,7 +252,9 @@ function SignupPage() {
               <div className="w-full border-t border-purple-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-purple-500">Or continue with</span>
+              <span className="px-4 bg-white text-purple-500">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -115,7 +262,7 @@ function SignupPage() {
           <button
             onClick={handleGoogleSignUp}
             type="button"
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 font-medium py-3.5 rounded-lg transition duration-300 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 py-3.5 rounded-lg hover:bg-gray-50 transition"
           >
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path
@@ -137,13 +284,6 @@ function SignupPage() {
             </svg>
             Continue with Google
           </button>
-
-          <div className="mt-6 text-center text-sm text-purple-600 lg:hidden">
-            Already have an account?{' '}
-            <a href="/login" className="text-purple-700 font-medium hover:underline">
-              Sign in here
-            </a>
-          </div>
         </div>
       </div>
     </div>
