@@ -24,45 +24,85 @@ function LoginPage() {
     window.location.href = "http://localhost:5000/users/api/google";
   };
 
+  //   const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   try {
+  //     // ✅ get or create deviceId ONCE
+  //     let deviceId = localStorage.getItem("deviceId");
+
+  //     if (!deviceId) {
+  //       deviceId = crypto.randomUUID();
+  //       localStorage.setItem("deviceId", deviceId);
+  //     }
+
+  //     // ✅ now send it
+  //     const res = await api.post("/login", {
+  //       email,
+  //       password,
+  //       deviceId,
+  //     });
+
+  //     dispatch(
+  //       loginSuccess({
+  //         user: res.data.user,
+  //         accessToken: res.data.accessToken,
+  //       })
+  //     );
+
+  //     showSuccess("Login successful");
+  //     navigate("/");
+  //   } catch (err) {
+  //     console.error(err);
+
+  //     const message =
+  //       err.response?.data?.message || "Login failed";
+
+  //     showError(message);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    // ✅ get or create deviceId ONCE
-    let deviceId = localStorage.getItem("deviceId");
+    try {
+      let deviceId = localStorage.getItem("deviceId");
 
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
-      localStorage.setItem("deviceId", deviceId);
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem("deviceId", deviceId);
+      }
+
+      const res = await api.post("/login", {
+        email,
+        password,
+        deviceId,
+      });
+
+      dispatch(
+        loginSuccess({
+          user: res.data.user,
+          accessToken: res.data.accessToken,
+        })
+      );
+
+      showSuccess("Login successful");
+
+      const role = res.data.user.role;
+
+      if (role === "student") {
+        navigate("/student/dashboard");
+      } else if (role === "admin" || role === "superadmin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || "Login failed";
+      showError(message);
     }
-
-    // ✅ now send it
-    const res = await api.post("/login", {
-      email,
-      password,
-      deviceId,
-    });
-
-    dispatch(
-      loginSuccess({
-        user: res.data.user,
-        accessToken: res.data.accessToken,
-      })
-    );
-
-    showSuccess("Login successful");
-    navigate("/");
-  } catch (err) {
-    console.error(err);
-
-    const message =
-      err.response?.data?.message || "Login failed";
-
-    showError(message);
-  }
-};
-
-
+  };
 
 
   return (

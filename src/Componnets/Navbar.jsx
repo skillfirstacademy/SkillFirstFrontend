@@ -7,6 +7,12 @@ import profileImg from "../assets/icons8-account-100.png"
 function Navbar() {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const user = JSON.parse(localStorage.getItem("user"));
+
+  // ✅ ROLE BASED DASHBOARD ROUTE
+  const dashboardRoute =
+    user?.role === "admin" || user?.role === "superadmin"
+      ? "/admin/dashboard"
+      : "/student/dashboard";
   return (
     <nav className="bg-purple-950 border-b border-purple-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,7 +58,7 @@ function Navbar() {
           ) : (
             <div className="flex flex-col items-center">
             <Link
-              to="/student/dashboard"
+              to={dashboardRoute}
               className="
                 w-10 h-10 
                 flex items-center justify-center 
