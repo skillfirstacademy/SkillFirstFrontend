@@ -10,6 +10,7 @@ function AllVideos() {
   const [videosLoading, setVideosLoading] = useState(false);
   const [selectedStage, setSelectedStage] = useState("all");
   const [editingVideo, setEditingVideo] = useState(null);
+  const [playingVideo, setPlayingVideo] = useState(null);
   const [editForm, setEditForm] = useState({
     title: "",
     stage: "",
@@ -66,7 +67,8 @@ function AllVideos() {
     }
   };
 
-  const handleDeleteVideo = async (videoId) => {
+  const handleDeleteVideo = async (videoId, e) => {
+    e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this video?")) {
       return;
     }
@@ -80,13 +82,18 @@ function AllVideos() {
     }
   };
 
-  const handleEditClick = (video) => {
+  const handleEditClick = (video, e) => {
+    e.stopPropagation();
     setEditingVideo(video);
     setEditForm({
       title: video.title,
       stage: video.stage,
       order: video.order
     });
+  };
+
+  const handleVideoClick = (video) => {
+    setPlayingVideo(video);
   };
 
   const handleEditSubmit = async (e) => {
@@ -114,6 +121,11 @@ function AllVideos() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const getStreamUrl = (videoId) => {
+    const token = localStorage.getItem('token');
+    return `http://localhost:5000/api/videos/${videoId}/stream`;
   };
 
   return (
@@ -278,10 +290,11 @@ function AllVideos() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {videos.map((video, index) => (
+                    {videos.map((video) => (
                       <div
                         key={video._id}
-                        className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition"
+                        onClick={() => handleVideoClick(video)}
+                        className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition cursor-pointer"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -325,21 +338,18 @@ function AllVideos() {
                               </div>
                             </div>
 
-                            {video.videoUrl && (
-                              <a
-                                href={video.videoUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-purple-600 hover:text-purple-800 mt-2 inline-block"
-                              >
-                                View Video →
-                              </a>
-                            )}
+                            <div className="mt-3 flex items-center gap-2 text-sm text-purple-600">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Click to play video
+                            </div>
                           </div>
 
                           <div className="flex gap-2 ml-4">
                             <button
-                              onClick={() => handleEditClick(video)}
+                              onClick={(e) => handleEditClick(video, e)}
                               className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
                               title="Edit"
                             >
@@ -349,7 +359,7 @@ function AllVideos() {
                             </button>
                             
                             <button
-                              onClick={() => handleDeleteVideo(video._id)}
+                              onClick={(e) => handleDeleteVideo(video._id, e)}
                               className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
                               title="Delete"
                             >
@@ -377,7 +387,7 @@ function AllVideos() {
               Edit Video
             </h2>
             
-            <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-purple-800 mb-2">
                   Video Title
@@ -430,13 +440,61 @@ function AllVideos() {
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  onClick={handleEditSubmit}
                   className="flex-1 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition font-medium"
                 >
                   Save Changes
                 </button>
               </div>
-            </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Player Modal */}
+      {playingVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-5xl">
+            <div className="bg-black rounded-xl overflow-hidden">
+              <div className="flex justify-between items-center p-4 bg-gray-900">
+                <h3 className="text-white text-lg font-semibold">
+                  {playingVideo.title}
+                </h3>
+                <button
+                  onClick={() => setPlayingVideo(null)}
+                  className="text-white hover:text-red-500 transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <video
+                controls
+                autoPlay
+                className="w-full"
+                style={{ maxHeight: '70vh' }}
+                src={getStreamUrl(playingVideo._id)}
+              >
+                Your browser does not support the video tag.
+              </video>
+
+              <div className="p-4 bg-gray-900 text-white">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="px-3 py-1 bg-purple-600 rounded-full capitalize">
+                    {playingVideo.stage}
+                  </span>
+                  <span>Order: #{playingVideo.order}</span>
+                  {playingVideo.duration && (
+                    <span>Duration: {formatDuration(playingVideo.duration)}</span>
+                  )}
+                  {playingVideo.fileSize && (
+                    <span>Size: {formatFileSize(playingVideo.fileSize)}</span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
