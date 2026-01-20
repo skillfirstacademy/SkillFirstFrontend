@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { Menu, Home, BookOpen, Users, Settings, BarChart3, ChevronDown, ChevronRight, Video, ClipboardList } from 'lucide-react';
+import { Menu, Home, BookOpen, Users, Settings, BarChart3, ChevronDown, ChevronRight, Video, ClipboardList, LogOut } from 'lucide-react';
+import { logout } from "../../Features/authSlice";
+import { showSuccess } from '../../Componnets/AppToaster';
+import { useDispatch } from 'react-redux';
+import api from '../../api/axios';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedMenus, setExpandedMenus] = useState({});
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -21,6 +26,23 @@ const AdminLayout = () => {
 
   const handleRouteChange = (route) => {
     navigate(route);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/logout");
+    } catch (err) {
+      console.log("LOGOUT ERROR STATUS:", err.response?.status);
+      console.log("LOGOUT ERROR DATA:", err.response?.data);
+      console.log("ERROR :", err);
+    } finally {
+      dispatch(logout());
+      localStorage.removeItem("deviceId");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+      navigate("/login");
+      showSuccess("Logged out successfully");
+    }
   };
 
   // Auto-expand menus based on current route
@@ -40,14 +62,14 @@ const AdminLayout = () => {
   }, [location.pathname]);
 
   const menuItems = [
-    { 
-      icon: Home, 
-      label: 'Dashboard', 
+    {
+      icon: Home,
+      label: 'Dashboard',
       route: '/admin/dashboard',
       type: 'single'
     },
-    { 
-      icon: BookOpen, 
+    {
+      icon: BookOpen,
       label: 'Courses',
       key: 'courses',
       type: 'dropdown',
@@ -56,8 +78,8 @@ const AdminLayout = () => {
         { label: 'Add Course', route: '/admin/add-courses' }
       ]
     },
-    { 
-      icon: Users, 
+    {
+      icon: Users,
       label: 'Students',
       key: 'students',
       type: 'dropdown',
@@ -67,8 +89,8 @@ const AdminLayout = () => {
         { label: 'Enroll Students', route: '/admin/enroll-students' }
       ]
     },
-    { 
-      icon: Users, 
+    {
+      icon: Users,
       label: 'Users',
       key: 'users',
       type: 'dropdown',
@@ -77,8 +99,8 @@ const AdminLayout = () => {
         { label: 'Make Admin', route: '/admin/make-admin' }
       ]
     },
-    { 
-      icon: ClipboardList, 
+    {
+      icon: ClipboardList,
       label: 'Tests',
       key: 'tests',
       type: 'dropdown',
@@ -87,8 +109,8 @@ const AdminLayout = () => {
         { label: 'All Tests', route: '/admin/all-test' }
       ]
     },
-    { 
-      icon: Video, 
+    {
+      icon: Video,
       label: 'Videos',
       key: 'videos',
       type: 'dropdown',
@@ -97,15 +119,15 @@ const AdminLayout = () => {
         { label: 'All Videos', route: '/admin/all-videos' }
       ]
     },
-    { 
-      icon: BarChart3, 
-      label: 'Analytics', 
+    {
+      icon: BarChart3,
+      label: 'Analytics',
       route: '/admin/analytics',
       type: 'single'
     },
-    { 
-      icon: Settings, 
-      label: 'Settings', 
+    {
+      icon: Settings,
+      label: 'Settings',
       route: '/admin/settings',
       type: 'single'
     }
@@ -116,7 +138,7 @@ const AdminLayout = () => {
     if (location.pathname === '/admin/dashboard') return 'Dashboard';
     const pathParts = location.pathname.split('/').filter(Boolean);
     const lastPart = pathParts[pathParts.length - 1];
-    return lastPart.split('-').map(word => 
+    return lastPart.split('-').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -125,9 +147,8 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-2xl transition-all duration-300 ease-in-out z-30 ${
-          sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 h-full bg-white shadow-2xl transition-all duration-300 ease-in-out z-30 ${sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full'
+          }`}
       >
         {sidebarOpen && (
           <div className="h-full flex flex-col">
@@ -141,17 +162,16 @@ const AdminLayout = () => {
               <ul className="space-y-1">
                 {menuItems.map((item, index) => {
                   const Icon = item.icon;
-                  
+
                   if (item.type === 'single') {
                     return (
                       <li key={index}>
                         <button
                           onClick={() => handleRouteChange(item.route)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                            location.pathname === item.route
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${location.pathname === item.route
                               ? 'bg-purple-100 text-purple-900'
                               : 'text-gray-700 hover:bg-purple-50 hover:text-purple-900'
-                          }`}
+                            }`}
                         >
                           <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
                           <span className="font-medium">{item.label}</span>
@@ -177,7 +197,7 @@ const AdminLayout = () => {
                           <ChevronRight className="w-4 h-4" />
                         )}
                       </button>
-                      
+
                       {/* Submenu */}
                       {expandedMenus[item.key] && (
                         <ul className="mt-1 ml-4 space-y-1">
@@ -185,11 +205,10 @@ const AdminLayout = () => {
                             <li key={subIndex}>
                               <button
                                 onClick={() => handleRouteChange(subItem.route)}
-                                className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-                                  location.pathname === subItem.route
+                                className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all duration-200 ${location.pathname === subItem.route
                                     ? 'bg-purple-100 text-purple-900 font-medium'
                                     : 'text-gray-600 hover:bg-purple-50 hover:text-purple-900'
-                                }`}
+                                  }`}
                               >
                                 {subItem.label}
                               </button>
@@ -202,15 +221,25 @@ const AdminLayout = () => {
                 })}
               </ul>
             </nav>
+
+            {/* Logout Button at Bottom */}
+            <div className="p-4 border-t border-purple-100">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
+              >
+                <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Logout</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* Main Content */}
       <div
-        className={`transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'ml-64' : 'ml-0'
-        }`}
+        className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'
+          }`}
       >
         {/* Top Header */}
         <header className="bg-white shadow-md sticky top-0 z-20">
