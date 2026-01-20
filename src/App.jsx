@@ -23,6 +23,17 @@ import StudentRoute from "./Routes/StudentRoute";
 
 import AdminDashboard from "./Pages/admin/AdminDashboard";
 import AdminRoute from "./Routes/AdminRoute";
+import AddCourses from "./Pages/admin/AddCourses";
+import AddStudents from "./Pages/admin/AddStudents";
+import AddTest from "./Pages/admin/AddTest";
+import AddVideos from "./Pages/admin/AddVideos";
+import AllCourses from "./Pages/admin/AllCourses";
+import AllStudents from "./Pages/admin/AllStudents";
+import AllTest from "./Pages/admin/AllTest";
+import AllUsers from "./Pages/admin/AllUsers";
+import AllVideos from "./Pages/admin/AllVideos";
+import EnrollStudents from "./Pages/admin/EnrollStudents";
+import MakeAdmin from "./Pages/admin/MakeAdmin";
 
 import AppToaster from "./Componnets/AppToaster";
 import "./App.css";
@@ -61,12 +72,111 @@ function App() {
           }
         />
 
-        {/* ADMIN ONLY */}
+        {/* ADMIN ONLY ROUTES */}
         <Route
           path="/admin/dashboard"
           element={
             <AdminRoute>
               <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/add-courses"
+          element={
+            <AdminRoute>
+              <AddCourses />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/add-students"
+          element={
+            <AdminRoute>
+              <AddStudents />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/add-test"
+          element={
+            <AdminRoute>
+              <AddTest />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/add-videos"
+          element={
+            <AdminRoute>
+              <AddVideos />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/all-courses"
+          element={
+            <AdminRoute>
+              <AllCourses />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/all-students"
+          element={
+            <AdminRoute>
+              <AllStudents />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/all-test"
+          element={
+            <AdminRoute>
+              <AllTest />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/all-users"
+          element={
+            <AdminRoute>
+              <AllUsers />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/all-videos"
+          element={
+            <AdminRoute>
+              <AllVideos />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/enroll-students"
+          element={
+            <AdminRoute>
+              <EnrollStudents />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/make-admin"
+          element={
+            <AdminRoute>
+              <MakeAdmin />
             </AdminRoute>
           }
         />
