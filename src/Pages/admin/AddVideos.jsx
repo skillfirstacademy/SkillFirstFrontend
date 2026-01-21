@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { showSuccess, showError } from "../../Componnets/AppToaster";
 import adminApi from "../../api/adminApi";
 
 function AddVideos() {
+  const location = useLocation();
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [videoFile, setVideoFile] = useState(null);
@@ -15,7 +17,15 @@ function AddVideos() {
   // Fetch all courses on mount
   useEffect(() => {
     fetchCourses();
-  }, []);
+    
+    // Get courseId from URL query parameters
+    const params = new URLSearchParams(location.search);
+    const courseIdFromUrl = params.get('courseId');
+    
+    if (courseIdFromUrl) {
+      setSelectedCourse(courseIdFromUrl);
+    }
+  }, [location.search]);
 
   const fetchCourses = async () => {
     try {
@@ -95,7 +105,7 @@ function AddVideos() {
 
       showSuccess("Video uploaded successfully!");
       
-      // Reset form
+      // Reset form (but keep the selected course if it came from URL)
       setTitle("");
       setVideoFile(null);
       setStage("beginner");

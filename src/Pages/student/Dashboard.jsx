@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { showError, showSuccess } from "../../Componnets/AppToaster";
 import { logout } from "../../Features/authSlice";
 import api from "../../api/axios";
+import { useSessionValidator } from "../../hooks/useSessionValidator";
 
 const StatCard = ({ title, value, subtitle }) => (
+    
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <p className="text-sm text-gray-500">{title}</p>
         <p className="text-2xl font-semibold text-gray-900 mt-1">{value}</p>
@@ -18,6 +20,7 @@ const StatCard = ({ title, value, subtitle }) => (
 const Dashboard = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    useSessionValidator();
 
     const handleLogout = async () => {
         try {
