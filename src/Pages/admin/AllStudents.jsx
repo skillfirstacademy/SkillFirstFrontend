@@ -8,6 +8,10 @@ function AllStudents() {
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingStudentId, setDeletingStudentId] = useState(null);
   const [viewingStudent, setViewingStudent] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [enrollModal, setEnrollModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -15,7 +19,7 @@ function AllStudents() {
       const res = await adminApi.get("/admin/users");
       // Filter only students (role === "student")
       const studentUsers = (res.data.users || res.data).filter(
-        (user) => user.role === "student"
+        (user) => user.role === "student",
       );
       setStudents(studentUsers);
     } catch (err) {
@@ -32,7 +36,7 @@ function AllStudents() {
 
   const handleDeleteStudent = async (studentId, studentName) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${studentName}"? This action cannot be undone.`
+      `Are you sure you want to delete "${studentName}"? This action cannot be undone.`,
     );
 
     if (!confirmed) return;
@@ -64,12 +68,21 @@ function AllStudents() {
     });
   };
 
+  const fetchCourses = async () => {
+    try {
+      const res = await adminApi.get("/courses");
+      setCourses(res.data);
+    } catch (err) {
+      showError("Failed to fetch courses");
+    }
+  };
+
   // Filter students based on search term
   const filteredStudents = students.filter(
     (student) =>
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.phone?.includes(searchTerm)
+      student.phone?.includes(searchTerm),
   );
 
   if (loading) {
@@ -285,6 +298,18 @@ function AllStudents() {
                               </svg>
                             )}
                           </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setEnrollModal(true);
+                              fetchCourses();
+                            }}
+                            className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                            title="Enroll student"
+                          >
+                            Enroll
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -306,9 +331,7 @@ function AllStudents() {
                       {viewingStudent.name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold">
-                        Student Details
-                      </h2>
+                      <h2 className="text-2xl font-bold">Student Details</h2>
                       <p className="text-purple-200 text-sm mt-1">
                         Complete information
                       </p>
@@ -404,6 +427,64 @@ function AllStudents() {
             </div>
           </div>
         )}
+
+        {enrollModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
+    <div className="bg-white w-full max-w-md p-6 rounded-xl shadow-xl">
+      <h2 className="text-2xl font-bold text-purple-800 mb-4">
+        Enroll {selectedStudent?.name}
+      </h2>
+
+      <label className="block font-semibold mb-1">Select Course</label>
+      <select
+        className="w-full border p-3 rounded mb-4"
+        value={selectedCourseId}
+        onChange={(e) => setSelectedCourseId(e.target.value)}
+      >
+        <option value="">Choose a course</option>
+        {courses.map((c) => (
+          <option key={c._id} value={c._id}>
+            {c.title}
+          </option>
+        ))}
+      </select>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setEnrollModal(false)}
+          className="px-4 py-2 bg-gray-300 rounded"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={async () => {
+            if (!selectedCourseId)
+              return showError("Please select a course");
+
+            try {
+              await adminApi.post("/admin/enroll/student", {
+                userId: selectedStudent._id,
+                courseId: selectedCourseId,
+              });
+
+              showSuccess("Student enrolled successfully!");
+              setEnrollModal(false);
+              setSelectedCourseId("");
+
+            } catch (err) {
+              showError(err.response?.data?.message || "Enrollment failed");
+            }
+          }}
+          className="px-4 py-2 bg-purple-700 text-white rounded"
+        >
+          Enroll
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );

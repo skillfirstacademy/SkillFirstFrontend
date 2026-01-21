@@ -1,77 +1,128 @@
-import React, { useState } from 'react';
-import { Users, BookOpen, FileText, BarChart3, Award } from 'lucide-react';
-import Tabs from './Tabs';
-import { useSessionValidator } from '../../hooks/useSessionValidator';
+import React, { useState, useEffect } from "react";
+import { Users, BookOpen, FileText, BarChart3, Award } from "lucide-react";
+import Tabs from "./Tabs";
+import adminApi from "../../api/adminApi";
+import { showError } from "../../Componnets/AppToaster";
+import { useSessionValidator } from "../../hooks/useSessionValidator";
 
 const AdminDashboard = () => {
   useSessionValidator();
-  const [activeTab, setActiveTab] = useState('students');
+
+  const [activeTab, setActiveTab] = useState("students");
+  const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all dashboard data
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      const [usersRes, coursesRes, enrollmentStatsRes] = await Promise.all([
+        adminApi.get("/admin/users"),
+        adminApi.get("/courses"),
+        adminApi.get("/admin/enrollments/stats"),
+      ]);
+
+      setUsers(usersRes.data);
+      setCourses(coursesRes.data);
+      setStats(enrollmentStatsRes.data.stats);
+
+    } catch (err) {
+      console.log(err);
+      showError("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Calculate dynamic values
+  const totalStudents = users.filter((u) => u.role === "student").length;
+  const totalAdmins = users.filter((u) => u.role === "admin").length;
+  const totalSuperAdmins = users.filter((u) => u.role === "superadmin").length;
+
+  const totalCertificates = 0; // (Implement later when certificate model is ready)
+  const completionRate = stats
+    ? `${Math.min(100, Math.floor(stats.paidEnrollments / (stats.totalEnrollments || 1) * 100))}%`
+    : "0%";
 
   const statsCards = [
     {
-      id: 'students',
+      id: "students",
       icon: Users,
-      label: 'Total Students',
-      value: '10,234',
-      change: '+12%',
-      bgColor: 'bg-purple-100',
-      iconColor: 'text-purple-700'
+      label: "Total Students",
+      value: totalStudents,
+      change: "+12%",
+      bgColor: "bg-purple-100",
+      iconColor: "text-purple-700",
     },
     {
-      id: 'courses',
+      id: "courses",
       icon: BookOpen,
-      label: 'Total Courses',
-      value: '48',
-      change: '+3',
-      bgColor: 'bg-blue-100',
-      iconColor: 'text-blue-700'
+      label: "Total Courses",
+      value: courses.length,
+      change: "+3",
+      bgColor: "bg-blue-100",
+      iconColor: "text-blue-700",
     },
     {
-      id: 'enrollments',
+      id: "enrollments",
       icon: FileText,
-      label: 'Active Enrollments',
-      value: '8,456',
-      change: '+8%',
-      bgColor: 'bg-amber-100',
-      iconColor: 'text-amber-700'
+      label: "Active Enrollments",
+      value: stats?.totalEnrollments || 0,
+      change: "+8%",
+      bgColor: "bg-amber-100",
+      iconColor: "text-amber-700",
     },
     {
-      id: 'revenue',
+      id: "revenue",
       icon: BarChart3,
-      label: 'Total Revenue',
-      value: '$125K',
-      change: '+15%',
-      bgColor: 'bg-green-100',
-      iconColor: 'text-green-700'
+      label: "Total Revenue",
+      value: `₹${stats?.totalRevenue || 0}`,
+      change: "+15%",
+      bgColor: "bg-green-100",
+      iconColor: "text-green-700",
     },
     {
-      id: 'certificates',
+      id: "certificates",
       icon: Award,
-      label: 'Certificates Issued',
-      value: '3,421',
-      change: '+22%',
-      bgColor: 'bg-pink-100',
-      iconColor: 'text-pink-700'
+      label: "Certificates Issued",
+      value: totalCertificates,
+      change: "+22%",
+      bgColor: "bg-pink-100",
+      iconColor: "text-pink-700",
     },
     {
-      id: 'instructors',
+      id: "instructors",
       icon: Users,
-      label: 'Active Instructors',
-      value: '52',
-      change: '+5',
-      bgColor: 'bg-indigo-100',
-      iconColor: 'text-indigo-700'
+      label: "Active Admins",
+      value: totalAdmins + totalSuperAdmins,
+      change: "+5",
+      bgColor: "bg-indigo-100",
+      iconColor: "text-indigo-700",
     },
     {
-      id: 'completion',
+      id: "completion",
       icon: BarChart3,
-      label: 'Completion Rate',
-      value: '78%',
-      change: '+6%',
-      bgColor: 'bg-teal-100',
-      iconColor: 'text-teal-700'
-    }
+      label: "Completion Rate",
+      value: completionRate,
+      change: "+6%",
+      bgColor: "bg-teal-100",
+      iconColor: "text-teal-700",
+    },
   ];
+
+  if (loading)
+    return (
+      <div className="p-10 text-center text-purple-600 font-semibold">
+        Loading Dashboard…
+      </div>
+    );
 
   return (
     <>
@@ -85,24 +136,30 @@ const AdminDashboard = () => {
               onClick={() => setActiveTab(card.id)}
               className={`bg-white rounded-2xl shadow-lg p-6 border cursor-pointer transition-all duration-300 ${
                 activeTab === card.id
-                  ? 'border-purple-500 shadow-xl ring-2 ring-purple-300'
-                  : 'border-purple-100 hover:shadow-xl'
+                  ? "border-purple-500 shadow-xl ring-2 ring-purple-300"
+                  : "border-purple-100 hover:shadow-xl"
               }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 ${card.bgColor} rounded-lg`}>
                   <Icon className={`w-6 h-6 ${card.iconColor}`} />
                 </div>
-                <span className="text-sm font-medium text-green-600">{card.change}</span>
+                <span className="text-sm font-medium text-green-600">
+                  {card.change}
+                </span>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">{card.label}</h3>
-              <p className="text-3xl font-bold text-purple-900">{card.value}</p>
+              <h3 className="text-gray-600 text-sm font-medium mb-1">
+                {card.label}
+              </h3>
+              <p className="text-3xl font-bold text-purple-900">
+                {card.value}
+              </p>
             </div>
           );
         })}
       </div>
 
-      {/* Tabs Component */}
+      {/* Tabs — Students / Courses / Enrollments / Admins etc */}
       <Tabs activeTab={activeTab} />
     </>
   );
