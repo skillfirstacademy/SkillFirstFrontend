@@ -65,25 +65,13 @@ function App() {
         <Route path="/uiux" element={<UiUx />} />
 
         {/* STUDENT ONLY */}
-        <Route
-          path="/student/dashboard"
-          element={
-            <StudentRoute>
-              <Dashboard />
-            </StudentRoute>
-          }
-        />
+        <Route path="/student/dashboard" element={ <StudentRoute> <Dashboard /> </StudentRoute> }>
+
+        </Route>
 
         {/* ADMIN ROUTES - All nested under AdminLayout */}
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }
-        >
-          {/* Nested admin routes - these render inside AdminLayout's <Outlet /> */}
+        <Route path="/admin" element={ <AdminRoute> <AdminLayout /> </AdminRoute>}>
+          
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="add-courses" element={<AddCourses />} />
           <Route path="all-courses" element={<AllCourses />} />
@@ -96,6 +84,7 @@ function App() {
           <Route path="all-test" element={<AllTest />} />
           <Route path="add-videos" element={<AddVideos />} />
           <Route path="all-videos" element={<AllVideos />} />
+
         </Route>
 
         {/* 404 */}

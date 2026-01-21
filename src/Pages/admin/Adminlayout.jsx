@@ -35,13 +35,15 @@ const AdminLayout = () => {
   const handleLogout = async () => {
     try {
       await api.post("/logout");
+      // Only clear if backend logout succeeded
+      localStorage.removeItem("deviceId");
     } catch (err) {
       console.log("LOGOUT ERROR STATUS:", err.response?.status);
       console.log("LOGOUT ERROR DATA:", err.response?.data);
       console.log("ERROR :", err);
+      // Don't remove deviceId if logout failed
     } finally {
       dispatch(logout());
-      localStorage.removeItem("deviceId");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
       navigate("/login");

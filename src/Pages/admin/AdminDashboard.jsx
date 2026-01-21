@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Users, BookOpen, FileText, BarChart3, Award } from 'lucide-react';
 import Tabs from './Tabs';
+import { useSessionValidator } from '../../hooks/useSessionValidator';
 
 const AdminDashboard = () => {
+  useSessionValidator();
   const [activeTab, setActiveTab] = useState('students');
 
   const statsCards = [

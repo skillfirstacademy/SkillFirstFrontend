@@ -7,9 +7,6 @@ import AppToaster from "../Componnets/AppToaster";
 import { showSuccess, showError } from "../Componnets/AppToaster";
 import eye from "../assets/eye.svg"
 import closeeye from "../assets/eye (2).svg"
-// import { EyeClosed } from 'lucide-react';
-
-// import { showError, showSuccess } from "../utils/toast";
 
 function LoginPage() {
   const dispatch = useDispatch();
@@ -19,66 +16,43 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
 
   const handleGoogleSignIn = () => {
     window.location.href = "http://localhost:5000/users/api/google";
   };
 
-  //   const handleSubmit = async (e) => {
-  //   e.preventDefault();
+  const getDeviceId = () => {
+    let deviceId = localStorage.getItem("deviceId");
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+    }
+    return deviceId;
+  };
 
-  //   try {
-  //     // ✅ get or create deviceId ONCE
-  //     let deviceId = localStorage.getItem("deviceId");
+  const performLogin = async (forceLogin = false) => {
+    const deviceId = getDeviceId();
 
-  //     if (!deviceId) {
-  //       deviceId = crypto.randomUUID();
-  //       localStorage.setItem("deviceId", deviceId);
-  //     }
-
-  //     // ✅ now send it
-  //     const res = await api.post("/login", {
-  //       email,
-  //       password,
-  //       deviceId,
-  //     });
-
-  //     dispatch(
-  //       loginSuccess({
-  //         user: res.data.user,
-  //         accessToken: res.data.accessToken,
-  //       })
-  //     );
-
-  //     showSuccess("Login successful");
-  //     navigate("/");
-  //   } catch (err) {
-  //     console.error(err);
-
-  //     const message =
-  //       err.response?.data?.message || "Login failed";
-
-  //     showError(message);
-  //   }
-  // };
-
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    console.log("🔵 FRONTEND - Attempting login with:", { 
+      email, 
+      deviceId, 
+      forceLogin 
+    });
 
     try {
-      let deviceId = localStorage.getItem("deviceId");
-
-      if (!deviceId) {
-        deviceId = crypto.randomUUID();
-        localStorage.setItem("deviceId", deviceId);
-      }
-
       const res = await api.post("/login", {
         email,
         password,
         deviceId,
+        forceLogin, // ✅ This is being sent
       });
+
+      console.log("✅ FRONTEND - Login successful:", res.data);
+
+      // Store tokens
+      localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
       dispatch(
         loginSuccess({
@@ -99,11 +73,55 @@ function LoginPage() {
         navigate("/");
       }
     } catch (err) {
-      const message = err.response?.data?.message || "Login failed";
-      showError(message);
+      console.log("❌ FRONTEND - Login error:", {
+        status: err.response?.status,
+        code: err.response?.data?.code,
+        message: err.response?.data?.message
+      });
+
+      // Check if it's a device conflict error
+      if (err.response?.status === 403 && err.response?.data?.code === "DEVICE_CONFLICT") {
+        console.log("⚠️ FRONTEND - Device conflict detected, showing modal");
+        setShowConflictModal(true);
+      } else {
+        const message = err.response?.data?.message || "Login failed";
+        showError(message);
+      }
+      throw err;
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await performLogin(false); // ✅ First attempt without force
+    } catch (err) {
+      // Error already handled in performLogin
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForceLogin = async () => {
+    console.log("🔴 FRONTEND - User confirmed force login");
+    setShowConflictModal(false);
+    setLoading(true);
+
+    try {
+      await performLogin(true); // ✅ Retry with forceLogin=true
+    } catch (err) {
+      // Error already handled in performLogin
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelForceLogin = () => {
+    console.log("⚪ FRONTEND - User cancelled force login");
+    setShowConflictModal(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -136,7 +154,7 @@ function LoginPage() {
             <p className="text-purple-600 mt-2">Enter your credentials or use Google</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-purple-800 mb-1">
                 Email address
@@ -180,14 +198,11 @@ function LoginPage() {
                     src={showPassword ? closeeye : eye}
                     alt="toggle password"
                   />
-
                 </button>
-
               </div>
             </div>
 
             <div className="flex items-center justify-between text-sm">
-
               <a href="/forgot-password" className="text-purple-700 hover:underline font-medium">
                 Forgot password?
               </a>
@@ -195,10 +210,10 @@ function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-purple-700 text-white font-semibold py-3.5 rounded-lg hover:bg-purple-800 transition duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full bg-purple-700 text-white font-semibold py-3.5 rounded-lg hover:bg-purple-800 transition duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Sign In
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
@@ -247,6 +262,53 @@ function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Device Conflict Modal */}
+      {showConflictModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fadeIn">
+            <div className="text-center mb-6">
+              <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-purple-900 mb-2">
+                Already Logged In
+              </h3>
+              <p className="text-purple-600">
+                You are already logged in on another device. Do you want to logout from that device and login here?
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelForceLogin}
+                className="flex-1 px-6 py-3 border-2 border-purple-200 text-purple-700 font-semibold rounded-lg hover:bg-purple-50 transition duration-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleForceLogin}
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-purple-700 text-white font-semibold rounded-lg hover:bg-purple-800 transition duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Logging in..." : "Yes, Login Here"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
