@@ -51,27 +51,6 @@ const AdminLayout = () => {
     }
   };
 
-  // Auto-expand menus based on current route
-  useEffect(() => {
-    const path = location.pathname;
-    
-    // Find which dropdown the current route belongs to
-    const activeDropdown = menuItems.find(item => {
-      if (item.type === 'dropdown') {
-        return item.subItems.some(subItem => subItem.route === path);
-      }
-      return false;
-    });
-
-    if (activeDropdown) {
-      // Keep only the active dropdown open
-      setExpandedMenus({ [activeDropdown.key]: true });
-    } else {
-      // Close all dropdowns when on a single page route
-      setExpandedMenus({});
-    }
-  }, [location.pathname]);
-
   const menuItems = [
     {
       icon: Home,
@@ -130,19 +109,29 @@ const AdminLayout = () => {
         { label: 'All Videos', route: '/admin/all-videos' }
       ]
     },
-    {
-      icon: BarChart3,
-      label: 'Analytics',
-      route: '/admin/analytics',
-      type: 'single'
-    },
-    {
-      icon: Settings,
-      label: 'Settings',
-      route: '/admin/settings',
-      type: 'single'
-    }
+    
   ];
+
+  // Auto-expand menus based on current route
+  useEffect(() => {
+    const path = location.pathname;
+    
+    // Find which dropdown the current route belongs to
+    const activeDropdown = menuItems.find(item => {
+      if (item.type === 'dropdown') {
+        return item.subItems.some(subItem => subItem.route === path);
+      }
+      return false;
+    });
+
+    if (activeDropdown) {
+      // Keep only the active dropdown open
+      setExpandedMenus({ [activeDropdown.key]: true });
+    } else {
+      // Close all dropdowns when on a single page route
+      setExpandedMenus({});
+    }
+  }, [location.pathname]);
 
   // Get page title from current route
   const getPageTitle = () => {
@@ -168,9 +157,9 @@ const AdminLayout = () => {
           }`}
       >
         {sidebarOpen && (
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col pt-25">
             {/* Sidebar Header */}
-            <div className="p-6 border-b border-purple-100">
+            <div className="px-6 py-4 border-b border-purple-100">
               <h2 className="text-xl font-bold text-purple-900">Admin Panel</h2>
             </div>
 
@@ -263,7 +252,7 @@ const AdminLayout = () => {
           }`}
       >
         {/* Top Header */}
-        <header className="bg-white shadow-md sticky top-0 z-20">
+        <header className="bg-white shadow-md sticky top-25 z-20">
           <div className="px-6 py-4">
             <div className="flex items-center gap-4">
               <button

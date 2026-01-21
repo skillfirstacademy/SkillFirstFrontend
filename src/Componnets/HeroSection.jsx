@@ -1,5 +1,6 @@
 // HeroSection.jsx
 import React from 'react';
+import Englishtow from "../assets/English.jpg"
 
 function HeroSection() {
   return (
