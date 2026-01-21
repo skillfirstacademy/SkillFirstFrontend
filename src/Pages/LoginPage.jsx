@@ -45,13 +45,14 @@ function LoginPage() {
         email,
         password,
         deviceId,
-        forceLogin, // ✅ This is being sent
+        forceLogin,
       });
 
       console.log("✅ FRONTEND - Login successful:", res.data);
 
-      // Store tokens
+      // ✅ Store both access token AND refresh token
       localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken); // ✅ Added this
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       dispatch(
