@@ -7,34 +7,35 @@ function AddCourses() {
   const [description, setDescription] = useState("");
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState("");
+  const [thumbnail, setThumbnail] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      showError("Course title is required");
-      return;
-    }
+    if (!title.trim()) return showError("Course title is required");
+    if (!description.trim()) return showError("Course description is required");
 
-    if (!description.trim()) {
-      showError("Course description is required");
-      return;
-    }
+    if (!thumbnail) return showError("Thumbnail image is required");
 
     if (isPaid && (!price || price <= 0)) {
-      showError("Please enter a valid price");
-      return;
+      return showError("Please enter a valid price");
     }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("isPaid", isPaid);
+    formData.append("price", isPaid ? price : 0);
+    formData.append("thumbnail", thumbnail);
 
     setLoading(true);
 
     try {
-      await adminApi.post("/courses", {
-        title,
-        description,
-        isPaid,
-        price: isPaid ? Number(price) : 0,
+      await adminApi.post("/courses", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       showSuccess("Course created successfully!");
@@ -44,6 +45,7 @@ function AddCourses() {
       setDescription("");
       setIsPaid(false);
       setPrice("");
+      setThumbnail(null);
     } catch (err) {
       showError(err.response?.data?.message || "Failed to create course");
     } finally {
@@ -55,18 +57,27 @@ function AddCourses() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-purple-900">
-              Create New Course
-            </h1>
-            <p className="text-purple-600 mt-2">
-              Add a new course to your platform
-            </p>
-          </div>
 
-          {/* Form */}
+          <h1 className="text-3xl font-bold text-purple-900 mb-6">
+            Create New Course
+          </h1>
+
           <form onSubmit={handleSubmit} className="space-y-6">
+
+            {/* Thumbnail Upload */}
+            <div>
+              <label className="block text-sm font-medium text-purple-800 mb-2">
+                Course Thumbnail *
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumbnail(e.target.files[0])}
+                className="w-full"
+                required
+              />
+            </div>
+
             {/* Title */}
             <div>
               <label className="block text-sm font-medium text-purple-800 mb-2">
@@ -76,9 +87,7 @@ function AddCourses() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Full Stack Web Development"
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500"
-                required
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg"
               />
             </div>
 
@@ -91,19 +100,17 @@ function AddCourses() {
                 rows="4"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Course description..."
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500"
-                required
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg"
               />
             </div>
 
-            {/* Paid Toggle */}
+            {/* Paid Checkbox */}
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={isPaid}
                 onChange={(e) => setIsPaid(e.target.checked)}
-                className="w-5 h-5 text-purple-600"
+                className="w-5 h-5"
               />
               <label className="text-purple-800 font-medium">
                 Paid Course?
@@ -121,29 +128,20 @@ function AddCourses() {
                   min="1"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="Enter course price"
-                  className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  required
+                  className="w-full px-4 py-3 border border-purple-200 rounded-lg"
                 />
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-700 text-white font-semibold py-4 rounded-lg hover:bg-purple-800 transition disabled:opacity-60"
+              className="w-full bg-purple-700 text-white py-3 rounded-lg"
             >
               {loading ? "Creating..." : "Create Course"}
             </button>
           </form>
 
-          {/* Info */}
-          <div className="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p className="text-sm text-purple-700">
-              📌 Free courses will automatically have price set to ₹0
-            </p>
-          </div>
         </div>
       </div>
     </div>
