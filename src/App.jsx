@@ -36,6 +36,7 @@ import AllUsers from "./Pages/admin/AllUsers";
 import AllVideos from "./Pages/admin/AllVideos";
 import EnrollStudents from "./Pages/admin/EnrollStudents";
 import MakeAdmin from "./Pages/admin/MakeAdmin";
+import AdminCourseDetail from "./Pages/admin/AdminCourseDetail";
 
 import AppToaster from "./Componnets/AppToaster";
 import "./App.css";
@@ -84,6 +85,8 @@ function App() {
           <Route path="all-test" element={<AllTest />} />
           <Route path="add-videos" element={<AddVideos />} />
           <Route path="all-videos" element={<AllVideos />} />
+          <Route path="/admin/course/:courseId" element={<AdminCourseDetail />} />
+
 
         </Route>
 

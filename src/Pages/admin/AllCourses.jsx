@@ -13,7 +13,7 @@ function AllCourses() {
     description: "",
     price: 0,
     isPaid: false,
-    isActive: true
+    isActive: true,
   });
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -37,6 +37,10 @@ function AllCourses() {
     navigate(`/admin/add-videos?courseId=${courseId}`);
   };
 
+  const handleOpenCourseDetail = (courseId) => {
+    navigate(`/admin/course/${courseId}`);
+  };
+
   const handleEditClick = (course, e) => {
     e.stopPropagation();
     setEditingCourse(course);
@@ -45,27 +49,18 @@ function AllCourses() {
       description: course.description,
       price: course.price || 0,
       isPaid: course.isPaid,
-      isActive: course.isActive !== undefined ? course.isActive : true
+      isActive: course.isActive !== undefined ? course.isActive : true,
     });
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!editForm.title.trim()) {
-      showError("Course title is required");
-      return;
-    }
 
-    if (!editForm.description.trim()) {
-      showError("Course description is required");
-      return;
-    }
-
-    if (editForm.isPaid && (!editForm.price || editForm.price <= 0)) {
-      showError("Please enter a valid price for paid course");
-      return;
-    }
+    if (!editForm.title.trim()) return showError("Course title is required");
+    if (!editForm.description.trim())
+      return showError("Course description is required");
+    if (editForm.isPaid && (!editForm.price || editForm.price <= 0))
+      return showError("Please enter a valid price");
 
     setSaving(true);
 
@@ -75,20 +70,19 @@ function AllCourses() {
         description: editForm.description.trim(),
         price: editForm.isPaid ? Number(editForm.price) : 0,
         isPaid: editForm.isPaid,
-        isActive: editForm.isActive
+        isActive: editForm.isActive,
       };
 
       await adminApi.put(`/courses/${editingCourse._id}`, updateData);
-      
+
       showSuccess("Course updated successfully!");
-      
-      // Update the course in the local state
-      setCourses(courses.map(course => 
-        course._id === editingCourse._id 
-          ? { ...course, ...updateData }
-          : course
-      ));
-      
+
+      setCourses(
+        courses.map((c) =>
+          c._id === editingCourse._id ? { ...c, ...updateData } : c,
+        ),
+      );
+
       setEditingCourse(null);
     } catch (err) {
       showError(err.response?.data?.message || "Failed to update course");
@@ -97,152 +91,110 @@ function AllCourses() {
     }
   };
 
-  const handleDeleteCourse = async (courseId, courseTitle) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
+  const handleDeleteCourse = async (courseId, title) => {
+    if (!window.confirm(`Delete "${title}" permanently?`)) return;
 
     setDeletingCourseId(courseId);
 
     try {
       await adminApi.delete(`/courses/${courseId}`);
-      showSuccess("Course deleted successfully!");
-      setCourses(courses.filter((course) => course._id !== courseId));
+      showSuccess("Course deleted!");
+      setCourses(courses.filter((c) => c._id !== courseId));
     } catch (err) {
-      showError(err.response?.data?.message || "Failed to delete course");
+      showError(err.response?.data?.message || "Failed to delete");
     } finally {
       setDeletingCourseId(null);
     }
   };
 
+  // LOADING
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-            <p className="text-purple-600 text-center">Loading courses...</p>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center text-purple-700">
+        Loading courses...
       </div>
     );
   }
 
+  // NO COURSES
   if (courses.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-            <p className="text-purple-600 text-center">
-              No courses available yet.
-            </p>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center text-purple-700">
+        No courses available yet.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-purple-900">All Courses</h1>
-            <p className="text-purple-600 mt-2">Manage your course library</p>
-          </div>
+          {/* HEADER */}
+          <h1 className="text-3xl font-bold text-purple-900 mb-2">
+            All Courses
+          </h1>
+          <p className="text-purple-600 mb-8">Manage your course library</p>
 
-          {/* Courses Grid */}
+          {/* GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {courses.map((course) => (
               <div
-                key={course._id}
-                className="relative group border border-purple-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-purple-50"
-              >
-                {/* Action Buttons - Show on hover */}
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                  {/* Edit Button */}
+  key={course._id}
+  onClick={(e) => {
+    // Prevent navigation if clicking on buttons
+    if (e.target.closest('button')) return;
+    handleOpenCourseDetail(course._id);
+  }}
+  className="relative group border border-purple-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-purple-50 cursor-pointer"
+>
+                {/* Thumbnail */}
+                {course.thumbnail ? (
+                  <img
+                    src={`http://localhost:5000${course.thumbnail}`}
+                    alt={course.title}
+                    className="w-full h-40 object-cover rounded-lg mb-4 shadow-md"
+                  />
+                ) : (
+                  <div className="w-full h-40 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center mb-4">
+                    No Thumbnail
+                  </div>
+                )}
+
+                {/* ACTION BUTTONS */}
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition flex gap-2">
+                  {/* Edit */}
                   <button
                     onClick={(e) => handleEditClick(course, e)}
                     className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg shadow-md"
-                    title="Edit course"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
+                    ✏️
                   </button>
 
-                  {/* Delete Button */}
+                  {/* Delete */}
                   <button
                     onClick={() => handleDeleteCourse(course._id, course.title)}
                     disabled={deletingCourseId === course._id}
-                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-md disabled:opacity-50"
-                    title="Delete course"
+                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-md"
                   >
-                    {deletingCourseId === course._id ? (
-                      <svg
-                        className="w-5 h-5 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    )}
+                    {deletingCourseId === course._id ? "⏳" : "🗑️"}
                   </button>
                 </div>
 
-                <h3 className="text-xl font-bold text-purple-900 mb-3 pr-12">
+                {/* TITLE */}
+                <h3 className="text-xl font-bold text-purple-900 mb-2">
                   {course.title}
                 </h3>
 
-                <p className="text-gray-700 mb-4 line-clamp-3">
+                <p className="text-gray-700 mb-3 line-clamp-3">
                   {course.description}
                 </p>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-purple-800">
-                      Type:
-                    </span>
+                {/* DETAILS */}
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <strong>Type:</strong>{" "}
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      className={`px-2 py-1 rounded ${
                         course.isPaid
                           ? "bg-purple-700 text-white"
                           : "bg-green-100 text-green-700"
@@ -250,63 +202,39 @@ function AllCourses() {
                     >
                       {course.isPaid ? "Paid" : "Free"}
                     </span>
-                  </div>
+                  </p>
 
                   {course.isPaid && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-purple-800">
-                        Price:
-                      </span>
-                      <span className="text-lg font-bold text-purple-900">
-                        ₹{course.price}
-                      </span>
-                    </div>
+                    <p>
+                      <strong>Price:</strong> ₹{course.price}
+                    </p>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-purple-800">
-                      Status:
-                    </span>
+                  <p>
+                    <strong>Status:</strong>{" "}
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      className={`px-2 py-1 rounded ${
                         course.isActive
                           ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
+                          : "bg-gray-200 text-gray-700"
                       }`}
                     >
                       {course.isActive ? "Active" : "Inactive"}
                     </span>
-                  </div>
+                  </p>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-purple-800">
-                      Created By:
-                    </span>
-                    <span className="text-sm text-gray-700">
-                      {course.createdBy?.name || "Unknown"}
-                    </span>
-                  </div>
+                  <p>
+                    <strong>Created By:</strong>{" "}
+                    {course.createdBy?.name || "Unknown"}
+                  </p>
                 </div>
 
-                {/* Add Video Button */}
+                {/* ADD VIDEO */}
                 <button
                   onClick={() => handleAddVideo(course._id)}
-                  className="w-full bg-purple-700 text-white font-semibold py-3 rounded-lg hover:bg-purple-800 transition shadow-md flex items-center justify-center gap-2"
+                  className="w-full mt-4 bg-purple-700 hover:bg-purple-800 text-white py-3 rounded-lg shadow-md"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Add Video
+                  ➕ Add Video
                 </button>
               </div>
             ))}
@@ -314,187 +242,93 @@ function AllCourses() {
         </div>
       </div>
 
-      {/* Edit Course Modal */}
+      {/* EDIT MODAL */}
       {editingCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-purple-700 to-purple-900 text-white p-6 rounded-t-xl">
-              <h2 className="text-2xl font-bold">Edit Course</h2>
-              <p className="text-purple-200 text-sm mt-1">
-                Update course information
-              </p>
-            </div>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6">
+            <h2 className="text-xl font-bold text-purple-900 mb-4">
+              Edit Course
+            </h2>
 
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-semibold text-purple-900 mb-2">
-                  Course Title *
-                </label>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <input
+                type="text"
+                value={editForm.title}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, title: e.target.value })
+                }
+                className="w-full border p-3 rounded"
+                placeholder="Course Title"
+              />
+
+              <textarea
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+                className="w-full border p-3 rounded"
+                rows="4"
+                placeholder="Description"
+              />
+
+              {/* PAID TOGGLE */}
+              <label className="flex items-center gap-2">
                 <input
-                  type="text"
-                  value={editForm.title}
+                  type="checkbox"
+                  checked={editForm.isPaid}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, title: e.target.value })
+                    setEditForm({
+                      ...editForm,
+                      isPaid: e.target.checked,
+                      price: e.target.checked ? editForm.price : 0,
+                    })
                   }
-                  className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                  placeholder="Enter course title"
-                  required
                 />
-              </div>
+                Paid Course?
+              </label>
 
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-semibold text-purple-900 mb-2">
-                  Description *
-                </label>
-                <textarea
-                  value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, description: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition resize-none"
-                  rows="4"
-                  placeholder="Enter course description"
-                  required
-                />
-              </div>
-
-              {/* Course Type */}
-              <div>
-                <label className="block text-sm font-semibold text-purple-900 mb-3">
-                  Course Type *
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={!editForm.isPaid}
-                      onChange={() =>
-                        setEditForm({ ...editForm, isPaid: false, price: 0 })
-                      }
-                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-gray-700">Free Course</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={editForm.isPaid}
-                      onChange={() =>
-                        setEditForm({ ...editForm, isPaid: true })
-                      }
-                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
-                    />
-                    <span className="ml-2 text-gray-700">Paid Course</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Price - Only show if paid */}
               {editForm.isPaid && (
-                <div>
-                  <label className="block text-sm font-semibold text-purple-900 mb-2">
-                    Price (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    value={editForm.price}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, price: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                    placeholder="Enter price"
-                    min="1"
-                    required
-                  />
-                </div>
+                <input
+                  type="number"
+                  className="w-full border p-3 rounded"
+                  value={editForm.price}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, price: e.target.value })
+                  }
+                  placeholder="Course Price"
+                  min="1"
+                />
               )}
 
-              {/* Course Status */}
-              <div>
-                <label className="block text-sm font-semibold text-purple-900 mb-3">
-                  Course Status
-                </label>
-                <div className="flex items-center">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editForm.isActive}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, isActive: e.target.checked })
-                      }
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    <span className="ml-3 text-sm font-medium text-gray-700">
-                      {editForm.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </label>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {editForm.isActive
-                    ? "Course is visible to students"
-                    : "Course is hidden from students"}
-                </p>
-              </div>
+              {/* ACTIVE TOGGLE */}
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={editForm.isActive}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      isActive: e.target.checked,
+                    })
+                  }
+                />
+                Active?
+              </label>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex gap-3 mt-4">
                 <button
                   type="button"
                   onClick={() => setEditingCourse(null)}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold"
-                  disabled={saving}
+                  className="flex-1 bg-gray-200 py-3 rounded"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 px-6 py-3 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-purple-700 text-white py-3 rounded"
                 >
-                  {saving ? (
-                    <>
-                      <svg
-                        className="w-5 h-5 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Save Changes
-                    </>
-                  )}
+                  {saving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </form>

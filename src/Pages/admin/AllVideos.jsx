@@ -28,9 +28,10 @@ const [testLoading, setTestLoading] = useState(false);
     setLoading(true);
     try {
       const res = await adminApi.get("/courses");
-      setCourses(res.data);
+       setCourses(res.data?.courses || []);
     } catch (err) {
       showError(err.response?.data?.message || "Failed to fetch courses");
+       setCourses([]);
     } finally {
       setLoading(false);
     }
