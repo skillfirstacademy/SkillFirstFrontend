@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from "../api/axios";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { loginSuccess } from "../Features/authSlice";
 import AppToaster from "../Componnets/AppToaster";
 import { showSuccess, showError } from "../Componnets/AppToaster";
@@ -11,6 +11,7 @@ import closeeye from "../assets/eye (2).svg"
 function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,7 +53,7 @@ function LoginPage() {
 
       // ✅ Store both access token AND refresh token
       localStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("refreshToken", res.data.refreshToken); // ✅ Added this
+      localStorage.setItem("refreshToken", res.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       dispatch(
@@ -64,14 +65,24 @@ function LoginPage() {
 
       showSuccess("Login successful");
 
-      const role = res.data.user.role;
+      // ✅ Check if there's a redirect URL (from course enrollment attempt)
+      const redirectTo = location.state?.redirectTo;
 
-      if (role === "student") {
-        navigate("/student/dashboard");
-      } else if (role === "admin" || role === "superadmin") {
-        navigate("/admin/dashboard");
+      if (redirectTo) {
+        // User was trying to enroll in a course, redirect them to that course
+        console.log("🔄 Redirecting to course:", redirectTo);
+        navigate(redirectTo);
       } else {
-        navigate("/");
+        // No redirect URL, use default navigation based on role
+        const role = res.data.user.role;
+        
+        if (role === "student") {
+          navigate("/student/dashboard");
+        } else if (role === "admin" || role === "superadmin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
       }
     } catch (err) {
       console.log("❌ FRONTEND - Login error:", {
