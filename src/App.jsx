@@ -40,6 +40,7 @@ import AdminCourseDetail from "./Pages/admin/AdminCourseDetail";
 
 import AppToaster from "./Componnets/AppToaster";
 import "./App.css";
+import ContactForm from "./Pages/ContactForm";
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
         <Route path="/courses" element={<CoursePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/contact" element={<ContactForm />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/google-success" element={<GoogleSuccess />} />
 
