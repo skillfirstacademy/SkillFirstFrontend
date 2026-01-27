@@ -6,7 +6,6 @@ function MakeAdmin() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createType, setCreateType] = useState("admin"); // "admin" or "student"
   const [creating, setCreating] = useState(false);
 
   // Form state
@@ -77,7 +76,7 @@ function MakeAdmin() {
     });
   };
 
-  const handleCreateUser = async (e) => {
+  const handleCreateAdmin = async (e) => {
     e.preventDefault();
 
     // Validate required fields
@@ -93,21 +92,15 @@ function MakeAdmin() {
     setCreating(true);
 
     try {
-      const endpoint = createType === "admin" 
-        ? "/admin/create-admin" 
-        : "/admin/create-student";
-
-      await adminApi.post(endpoint, formData);
+      await adminApi.post("/admin/create-admin", formData);
       
-      showSuccess(
-        `${createType === "admin" ? "Admin" : "Student"} created successfully`
-      );
+      showSuccess("Admin created successfully");
       
       resetForm();
       setShowCreateModal(false);
       fetchAdmins(); // Refresh the list
     } catch (err) {
-      showError(err.response?.data?.message || "Failed to create user");
+      showError(err.response?.data?.message || "Failed to create admin");
     } finally {
       setCreating(false);
     }
@@ -126,36 +119,18 @@ function MakeAdmin() {
           </p>
         </div>
 
-        {/* Create User Buttons */}
-        <div className="flex gap-2">
-          {isSuperAdmin && (
-            <button
-              onClick={() => {
-                setCreateType("admin");
-                setShowCreateModal(true);
-              }}
-              className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create Admin
-            </button>
-          )}
-          
+        {/* Create Admin Button - Only for Superadmin */}
+        {isSuperAdmin && (
           <button
-            onClick={() => {
-              setCreateType("student");
-              setShowCreateModal(true);
-            }}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Create Student
+            Create Admin
           </button>
-        </div>
+        )}
       </div>
 
       {/* Permission Warning */}
@@ -169,7 +144,7 @@ function MakeAdmin() {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-700">
-                You can create students but only superadmin can create or demote admins.
+                Only superadmin can create or demote admins.
               </p>
             </div>
           </div>
@@ -184,6 +159,19 @@ function MakeAdmin() {
         </div>
       ) : admins.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow">
+          <svg
+            className="w-16 h-16 text-gray-300 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
+          </svg>
           <p className="text-gray-500 text-lg">No admin users found</p>
         </div>
       ) : (
@@ -225,7 +213,7 @@ function MakeAdmin() {
         </div>
       )}
 
-      {/* Create User Modal */}
+      {/* Create Admin Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -233,9 +221,7 @@ function MakeAdmin() {
             <div className="sticky top-0 bg-gradient-to-r from-purple-700 to-purple-900 text-white p-6 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold">
-                    Create {createType === "admin" ? "Admin" : "Student"}
-                  </h2>
+                  <h2 className="text-2xl font-bold">Create Admin</h2>
                   <p className="text-purple-200 text-sm mt-1">
                     Fill in the details below
                   </p>
@@ -255,7 +241,7 @@ function MakeAdmin() {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+            <form onSubmit={handleCreateAdmin} className="p-6 space-y-4">
               {/* Name */}
               <div>
                 <label className="block text-sm font-semibold text-purple-900 mb-1">
@@ -361,7 +347,7 @@ function MakeAdmin() {
                       Creating...
                     </>
                   ) : (
-                    `Create ${createType === "admin" ? "Admin" : "Student"}`
+                    "Create Admin"
                   )}
                 </button>
               </div>
