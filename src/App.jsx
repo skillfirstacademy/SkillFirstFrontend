@@ -41,6 +41,8 @@ import AdminCourseDetail from "./Pages/admin/AdminCourseDetail";
 import AppToaster from "./Componnets/AppToaster";
 import "./App.css";
 import ContactForm from "./Pages/ContactForm";
+import StudentTestResultPage from "./Pages/student/StudentTestResultPage";
+import StudentTestPage from "./Pages/student/StudentTestPage";
 
 function App() {
   return (
@@ -68,13 +70,23 @@ function App() {
         <Route path="/uiux" element={<UiUx />} />
 
         {/* STUDENT ONLY */}
-        <Route path="/student/dashboard" element={ <StudentRoute> <Dashboard /> </StudentRoute> }>
-
+        <Route
+          path="/student"
+          element={
+            <StudentRoute>
+              <Dashboard />
+            </StudentRoute>
+          }
+        >
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="student/test/:videoId" element={<StudentTestPage />} />
+          <Route path="student/test-result/:testId" element={<StudentTestResultPage />} />
         </Route>
 
+
         {/* ADMIN ROUTES - All nested under AdminLayout */}
-        <Route path="/admin" element={ <AdminRoute> <AdminLayout /> </AdminRoute>}>
-          
+        <Route path="/admin" element={<AdminRoute> <AdminLayout /> </AdminRoute>}>
+
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="add-courses" element={<AddCourses />} />
           <Route path="all-courses" element={<AllCourses />} />

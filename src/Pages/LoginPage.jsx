@@ -277,7 +277,7 @@ function LoginPage() {
 
       {/* Device Conflict Modal */}
       {showConflictModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+        <div className="fixed inset-0 backdrop-blur bg-opacity-50 flex items-center justify-center z-50 px-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fadeIn">
             <div className="text-center mb-6">
               <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">

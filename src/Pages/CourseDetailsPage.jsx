@@ -5,14 +5,15 @@ import axios from "axios";
 import VideoPlayer from "../Componnets/VideoPlayer";
 import { showError, showSuccess } from "../Componnets/AppToaster";
 import adminApi from "../api/adminApi";
+import StudentVideoplayer from "../Componnets/StudentVideoplayer";
 
 function CourseDetailsPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  
+
   // Get user from Redux
   const { user } = useSelector((state) => state.auth);
-  
+
   const [course, setCourse] = useState(null);
   const [videos, setVideos] = useState([]);
   const [testsMap, setTestsMap] = useState({});
@@ -34,6 +35,19 @@ function CourseDetailsPage() {
     }
     fetchCourseData();
   }, [courseId]);
+
+  const isVideoCompleted = (videoId) => {
+    // Backend truth (Enrollment)
+    if (Array.isArray(enrollmentData?.progress?.watchedVideos)) {
+      return enrollmentData.progress.watchedVideos
+        .map(id => id.toString())
+        .includes(videoId);
+    }
+
+    // Local fallback (instant UI update)
+    return completedVideos.has(videoId);
+  };
+
 
   const fetchCourseData = async () => {
     try {
@@ -72,14 +86,20 @@ function CourseDetailsPage() {
       setLoading(false);
     }
   };
+  const users = JSON.parse(localStorage.getItem("user"));
+  const userId = users?._id;
 
   const checkEnrollmentStatus = async (courseId) => {
     try {
-      // Check if user is enrolled in this course
       const response = await adminApi.get(`/students/enrollment/${courseId}`);
       if (response.data.success && response.data.enrollment) {
         setIsEnrolled(true);
         setEnrollmentData(response.data.enrollment);
+
+        // Update completed videos from enrollment progress
+        if (response.data.enrollment.progress?.watchedVideos) {
+          setCompletedVideos(new Set(response.data.enrollment.progress.watchedVideos));
+        }
       } else {
         setIsEnrolled(false);
         setEnrollmentData(null);
@@ -123,21 +143,28 @@ function CourseDetailsPage() {
         userEmail: user?.email || "",
         userMobile: user?.mobile || user?.phone || "Not provided",
         courseName: course.title,
-        courseLevel: level, // ✅ now a string
+        courseLevel: level,
         courseAmount: course.isPaid ? course.price : 0,
       };
-  
+
       console.log("📧 Sending enrollment request:", enrollmentData);
-  
+
       const response = await adminApi.post(
         "/students/buy/enroll",
         enrollmentData
       );
-  
+
       if (response.data.success) {
-        showSuccess(response.data.message);
+        showSuccess(response.data.message || "Enrollment successful!");
         setIsEnrolled(true);
-        checkEnrollmentStatus(course._id);
+
+        // Set enrollment data from response
+        if (response.data.enrollment) {
+          setEnrollmentData(response.data.enrollment);
+        }
+
+        // Refresh enrollment status
+        await checkEnrollmentStatus(course._id);
       }
     } catch (error) {
       console.error("❌ Enrollment failed:", error);
@@ -148,20 +175,26 @@ function CourseDetailsPage() {
       setEnrollingLevel(null);
     }
   };
-  
-  
 
   const isVideoUnlocked = (videoIndex) => {
     if (!isEnrolled) return false;
-    
+
     // If no enrollment data, unlock first video only
-    if (!enrollmentData || !enrollmentData.unlockedVideos) {
+    if (!enrollmentData) {
       return videoIndex === 0;
     }
 
-    // Check if this video is in the unlocked videos array
-    const videoId = videos[videoIndex]?._id;
-    return enrollmentData.unlockedVideos.includes(videoId);
+    // Check if video unlocking is based on progress
+    // For first video, always unlock
+    if (videoIndex === 0) return true;
+
+    // For subsequent videos, check if previous video is watched
+    if (enrollmentData.progress?.watchedVideos) {
+      const previousVideoId = videos[videoIndex - 1]?._id;
+      return enrollmentData.progress.watchedVideos.includes(previousVideoId);
+    }
+
+    return videoIndex === 0;
   };
 
   const handlePlayVideo = (video, videoIndex) => {
@@ -192,6 +225,15 @@ function CourseDetailsPage() {
 
   const calculateProgress = () => {
     if (videos.length === 0) return 0;
+
+    // Use enrollment data if available
+    if (enrollmentData?.progress) {
+      const watchedCount = enrollmentData.progress.watchedVideos?.length || 0;
+      const totalVideos = enrollmentData.progress.totalVideos || videos.length;
+      return Math.round((watchedCount / totalVideos) * 100);
+    }
+
+    // Fallback to local state
     const completed = videos.filter((v) => completedVideos.has(v._id)).length;
     return Math.round((completed / videos.length) * 100);
   };
@@ -260,14 +302,14 @@ function CourseDetailsPage() {
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-4">{course.title}</h1>
               <p className="text-lg text-white/90 mb-6">{course.description}</p>
-              
+
               {/* Enrollment Status Badge */}
               {isEnrolled && (
                 <div className="inline-flex items-center gap-2 bg-green-500/20 backdrop-blur-sm border border-green-300 px-4 py-2 rounded-full text-sm font-semibold mb-4">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Enrolled
+                  Enrolled • {enrollmentData?.payment?.status === 'paid' ? 'Fully Paid' : enrollmentData?.payment?.status || 'Active'}
                 </div>
               )}
 
@@ -316,7 +358,7 @@ function CourseDetailsPage() {
                 <img
                   src={course.thumbnail}
                   alt={course.title}
-                  className="rounded-2xl shadow-2xl max-w-full h-auto"
+                  className="rounded-2xl shadow-2xl max-w-full h-auto object-cover"
                 />
               ) : (
                 <div className="w-full h-64 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
@@ -333,11 +375,13 @@ function CourseDetailsPage() {
       {/* MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Progress Section - Only show if enrolled */}
-        {isEnrolled && (
+        {isEnrolled && enrollmentData && (
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl font-bold text-gray-800">Your Progress</h3>
-              <span className="text-sm text-gray-600">{completedVideos.size} of {videos.length} videos completed</span>
+              <span className="text-sm text-gray-600">
+                {enrollmentData.progress?.watchedVideos?.length || 0} of {enrollmentData.progress?.totalVideos || videos.length} videos completed
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
               <div
@@ -347,13 +391,35 @@ function CourseDetailsPage() {
                 <span className="text-xs font-bold text-white">{progress}%</span>
               </div>
             </div>
+
+            {/* Additional Stats */}
+            {enrollmentData.progress && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div className="bg-purple-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">{enrollmentData.progress.streak || 0}</div>
+                  <div className="text-sm text-gray-600">Day Streak</div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{enrollmentData.progress.wordsLearned || 0}</div>
+                  <div className="text-sm text-gray-600">Words Learned</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">{enrollmentData.progress.fluencyPercent || 0}%</div>
+                  <div className="text-sm text-gray-600">Fluency</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-orange-600">{enrollmentData.progress.certificatesEarned || 0}</div>
+                  <div className="text-sm text-gray-600">Certificates</div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Course Content */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Course Videos</h2>
-          
+
           {videos.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🎓</div>
@@ -365,29 +431,80 @@ function CourseDetailsPage() {
               {videos.map((video, index) => {
                 const test = testsMap[video._id];
                 const isExpanded = expandedVideo === video._id;
-                const isCompleted = completedVideos.has(video._id);
+                const isCompleted = isVideoCompleted(video._id);
                 const isUnlocked = isVideoUnlocked(index);
 
                 return (
-                  <div key={video._id} className={`border-2 rounded-xl overflow-hidden transition-colors ${isUnlocked ? 'border-gray-200 hover:border-purple-300' : 'border-gray-300 bg-gray-50'}`}>
+                  <div key={video._id} className="border-2 border-gray-200 hover:border-purple-300 rounded-xl overflow-hidden transition-all">
                     <button
                       onClick={() => toggleVideoExpand(video._id)}
-                      className={`w-full p-6 flex items-center gap-4 transition-colors text-left ${isUnlocked ? 'hover:bg-gray-50' : 'cursor-default'}`}
+                      className="w-full p-6 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left"
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${isCompleted ? "bg-green-500 text-white" : isUnlocked ? "bg-gray-200 text-gray-700" : "bg-gray-300 text-gray-500"}`}>
-                        {isCompleted ? "✓" : isUnlocked ? index + 1 : "🔒"}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className={`text-lg font-semibold ${isUnlocked ? 'text-gray-800' : 'text-gray-500'}`}>
-                          {video.title}
-                          {!isUnlocked && <span className="ml-2 text-sm font-normal">(Locked)</span>}
-                        </h4>
-                        {video.description && isExpanded && (
-                          <p className="text-sm text-gray-600 mt-2">{video.description}</p>
+                      {/* Video Thumbnail or Number Badge */}
+                      <div className="relative flex-shrink-0">
+                        {video.thumbnail ? (
+                          <div className="relative w-32 h-20 rounded-lg overflow-hidden">
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Play Icon Overlay */}
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-purple-600 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </div>
+                            </div>
+                            {/* Video Number Badge */}
+                            <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${isCompleted
+                            ? "bg-green-500 text-white"
+                            : "bg-gradient-to-br from-purple-500 to-blue-500 text-white"
+                            }`}>
+                            {isCompleted ? "✓" : index + 1}
+                          </div>
                         )}
                       </div>
+
+                      {/* Video Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-lg font-semibold text-gray-800 mb-1">
+                          {video.title}
+                        </h4>
+                        {video.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2">
+                            {video.description}
+                          </p>
+                        )}
+                        {/* Video Duration or Source */}
+                        {(video.duration || video.source) && (
+                          <div className="flex items-center gap-3 mt-2">
+                            {video.duration && (
+                              <span className="text-xs text-gray-500 flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {video.duration}
+                              </span>
+                            )}
+                            {video.source && (
+                              <span className="text-xs text-purple-600 font-medium">
+                                {video.source}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Expand Icon */}
                       <svg
-                        className={`w-6 h-6 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        className={`w-6 h-6 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -396,54 +513,95 @@ function CourseDetailsPage() {
                       </svg>
                     </button>
 
+                    {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-6 pb-6 space-y-4 bg-gray-50">
-                        {test && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="font-semibold text-blue-900">Practice Test Available</span>
+                      <div className="px-6 pb-6 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                        {/* Practice Test Info */}
+                        {test && isVideoCompleted(video._id) && (
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <h5 className="font-semibold text-blue-900 mb-1">Practice Test Available</h5>
+                                <p className="text-sm text-blue-700 mb-3">
+                                  Test your knowledge with {test.questions?.length || 0} questions
+                                  {test.passingScore && ` • ${test.passingScore}% passing score`}
+                                </p>
+                                {/* <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isEnrolled) {
+                                      handleViewTest(test);
+                                    } else {
+                                      showError("Please enroll to access practice tests");
+                                    }
+                                  }}
+                                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                  </svg>
+                                  {isEnrolled ? 'Start Test' : 'Enroll to Access Test'}
+                                </button> */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/student/test/${video._id}`);
+                                  }}
+                                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
+                                >
+                                  Start Test
+                                </button>
+                              </div>
                             </div>
-                            <div className="text-sm text-blue-700 mb-3">
-                              {test.questions?.length || 0} questions
-                              {test.passingScore && (
-                                <span className="ml-2">• {test.passingScore}% to pass</span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => handleViewTest(test)}
-                              disabled={!isEnrolled}
-                              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                              </svg>
-                              {isEnrolled ? 'Take Test' : 'Enroll to Access'}
-                            </button>
                           </div>
                         )}
 
-                        <button
-                          onClick={() => handlePlayVideo(video, index)}
-                          disabled={!isUnlocked}
-                          className={`w-full flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all shadow-lg ${
-                            isUnlocked
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white hover:shadow-xl'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          }`}
-                        >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {isUnlocked ? (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        {/* Call to Action */}
+                        <div className="pt-2">
+                          {isEnrolled ? (
+                            isUnlocked ? (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePlayVideo(video, index);
+                                }}
+                                className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                              >
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                                Watch Video
+                              </button>
                             ) : (
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            )}
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {isUnlocked ? 'Play Video' : 'Video Locked'}
-                        </button>
+                              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-center">
+                                <p className="text-amber-800 font-medium mb-2">
+                                  🔒 Complete previous videos to unlock this content
+                                </p>
+                                <p className="text-sm text-amber-600">
+                                  Keep learning to access all course materials
+                                </p>
+                              </div>
+                            )
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEnrollClick(course.level);
+                              }}
+                              className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                            >
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                              Enroll to Watch {course.isPaid && `- ₹${course.price}`}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -452,6 +610,35 @@ function CourseDetailsPage() {
             </div>
           )}
         </div>
+
+        {/* Enrollment CTA Section for non-enrolled users */}
+        {!isEnrolled && videos.length > 0 && (
+          <div className="mt-8 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-2xl shadow-2xl p-8 text-white text-center">
+            <h3 className="text-3xl font-bold mb-3">Ready to Start Learning?</h3>
+            <p className="text-lg text-white/90 mb-6">
+              Enroll now to access all {videos.length} videos, practice tests, and earn your certificate
+            </p>
+            <button
+              onClick={() => handleEnrollClick(course.level)}
+              disabled={enrollingLevel === "enrolling"}
+              className="inline-flex items-center justify-center gap-3 bg-white text-purple-600 px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {enrollingLevel === "enrolling" ? (
+                <>
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-purple-600"></div>
+                  Enrolling...
+                </>
+              ) : (
+                <>
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Enroll Now {course.isPaid && `- ₹${course.price}`}
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* TEST VIEWER MODAL */}
@@ -498,14 +685,14 @@ function CourseDetailsPage() {
                               return (
                                 <div
                                   key={optIdx}
-                                  className={`p-4 rounded-lg border-2 transition-colors ${
-                                    isCorrect
-                                      ? "bg-green-50 border-green-500"
-                                      : "bg-white border-gray-200"
-                                  }`}
+                                  className={`p-4 rounded-lg border-2 transition-colors ${isCorrect
+                                    ? "bg-green-50 border-green-500"
+                                    : "bg-white border-gray-200"
+                                    }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isCorrect ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700"}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isCorrect ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700"
+                                      }`}>
                                       {String.fromCharCode(65 + optIdx)}
                                     </div>
                                     <span className="flex-1">{option}</span>
@@ -550,11 +737,23 @@ function CourseDetailsPage() {
 
       {/* VIDEO PLAYER MODAL */}
       {playingVideo && (
-        <VideoPlayer
-          video={playingVideo}
-          onClose={() => setPlayingVideo(null)}
+        <StudentVideoplayer
+          videoUrl={`http://localhost:5000/api/videos/${playingVideo._id}/stream`}
+          title={playingVideo.title}
+          videoId={playingVideo._id}           // ADD
+          courseId={courseId}                   // ADD
+          onClose={() => {
+            setPlayingVideo(null);
+            checkEnrollmentStatus(courseId);    // Refresh to show green tick
+          }}
+          onComplete={(data) => {
+            console.log("Video completed:", data);
+            setCompletedVideos(prev => new Set([...prev, data.videoId]));
+            checkEnrollmentStatus(courseId);
+            showSuccess("Great job! Video completed 🎉");
+          }}
           onError={(err) => {
-            console.error("Video player error:", err);
+            showError("Failed to play video");
             setPlayingVideo(null);
           }}
         />
