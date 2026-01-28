@@ -12,12 +12,13 @@ function AllStudents() {
   const [enrollModal, setEnrollModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
+  const [enrolling, setEnrolling] = useState(false);
 
   const fetchStudents = async () => {
     setLoading(true);
     try {
       const res = await adminApi.get("/admin/users");
-      // Filter only students (role === "student")
       const studentUsers = (res.data.users || res.data).filter(
         (user) => user.role === "student",
       );
@@ -71,9 +72,60 @@ function AllStudents() {
   const fetchCourses = async () => {
     try {
       const res = await adminApi.get("/courses");
-      setCourses(res.data);
+      setCourses(Array.isArray(res.data) ? res.data : res.data.courses || []);
     } catch (err) {
       showError("Failed to fetch courses");
+      setCourses([]);
+    }
+  };
+
+  const handleEnrollClick = (student) => {
+    setSelectedStudent(student);
+    setEnrollModal(true);
+    setSelectedCourseId("");
+    setCustomPrice("");
+    fetchCourses();
+  };
+
+  const handleCourseChange = (courseId) => {
+    setSelectedCourseId(courseId);
+    
+    // Find selected course and set its price as default
+    const selectedCourse = courses.find(c => c._id === courseId);
+    if (selectedCourse && selectedCourse.price) {
+      setCustomPrice(selectedCourse.price.toString());
+    } else {
+      setCustomPrice("");
+    }
+  };
+
+  const handleEnrollStudent = async () => {
+    if (!selectedCourseId) {
+      return showError("Please select a course");
+    }
+
+    if (!customPrice || customPrice <= 0) {
+      return showError("Please enter a valid price");
+    }
+
+    setEnrolling(true);
+    console.log("data", parseFloat(customPrice),)
+    try {
+      await adminApi.post("/admin/enroll/student", {
+        userId: selectedStudent._id,
+        courseId: selectedCourseId,
+        paymentAmount: parseFloat(customPrice),
+      });
+
+      showSuccess(`${selectedStudent.name} enrolled successfully!`);
+      setEnrollModal(false);
+      setSelectedCourseId("");
+      setCustomPrice("");
+      setSelectedStudent(null);
+    } catch (err) {
+      showError(err.response?.data?.message || "Enrollment failed");
+    } finally {
+      setEnrolling(false);
     }
   };
 
@@ -84,6 +136,9 @@ function AllStudents() {
       student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.phone?.includes(searchTerm),
   );
+
+  // Get selected course details
+  const selectedCourse = courses.find(c => c._id === selectedCourseId);
 
   if (loading) {
     return (
@@ -300,12 +355,8 @@ function AllStudents() {
                           </button>
 
                           <button
-                            onClick={() => {
-                              setSelectedStudent(student);
-                              setEnrollModal(true);
-                              fetchCourses();
-                            }}
-                            className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                            onClick={() => handleEnrollClick(student)}
+                            className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition font-medium text-sm"
                             title="Enroll student"
                           >
                             Enroll
@@ -428,63 +479,134 @@ function AllStudents() {
           </div>
         )}
 
+        {/* Enrollment Modal */}
         {enrollModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
-    <div className="bg-white w-full max-w-md p-6 rounded-xl shadow-xl">
-      <h2 className="text-2xl font-bold text-purple-800 mb-4">
-        Enroll {selectedStudent?.name}
-      </h2>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-purple-800">
+                  Enroll Student
+                </h2>
+                <p className="text-gray-600 mt-1">
+                  Enroll {selectedStudent?.name} in a course
+                </p>
+              </div>
 
-      <label className="block font-semibold mb-1">Select Course</label>
-      <select
-        className="w-full border p-3 rounded mb-4"
-        value={selectedCourseId}
-        onChange={(e) => setSelectedCourseId(e.target.value)}
-      >
-        <option value="">Choose a course</option>
-        {courses.map((c) => (
-          <option key={c._id} value={c._id}>
-            {c.title}
-          </option>
-        ))}
-      </select>
+              <div className="space-y-4">
+                {/* Select Course */}
+                <div>
+                  <label className="block text-sm font-semibold text-purple-900 mb-2">
+                    Select Course <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    value={selectedCourseId}
+                    onChange={(e) => handleCourseChange(e.target.value)}
+                  >
+                    <option value="">-- Choose a course --</option>
+                    {Array.isArray(courses) && courses.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.title} {c.price ? `(₹${c.price})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => setEnrollModal(false)}
-          className="px-4 py-2 bg-gray-300 rounded"
-        >
-          Cancel
-        </button>
+                {/* Course Info */}
+                {selectedCourse && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-purple-900 mb-2">
+                      {selectedCourse.title}
+                    </h3>
+                    {selectedCourse.description && (
+                      <p className="text-sm text-purple-700 mb-2">
+                        {selectedCourse.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-purple-600">
+                      <span className="font-medium">Original Price:</span>
+                      <span className="font-bold">₹{selectedCourse.price || 0}</span>
+                    </div>
+                  </div>
+                )}
 
-        <button
-          onClick={async () => {
-            if (!selectedCourseId)
-              return showError("Please select a course");
+                {/* Custom Price Input */}
+                <div>
+                  <label className="block text-sm font-semibold text-purple-900 mb-2">
+                    Enrollment Price <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Enter amount"
+                      value={customPrice}
+                      onChange={(e) => setCustomPrice(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    You can set a custom price different from the course price
+                  </p>
+                </div>
 
-            try {
-              await adminApi.post("/admin/enroll/student", {
-                userId: selectedStudent._id,
-                courseId: selectedCourseId,
-              });
+                {/* Summary */}
+                {selectedCourseId && customPrice && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-900">
+                          Ready to enroll
+                        </p>
+                        <p className="text-sm text-green-700 mt-1">
+                          {selectedStudent?.name} will be enrolled in {selectedCourse?.title} for ₹{customPrice}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              showSuccess("Student enrolled successfully!");
-              setEnrollModal(false);
-              setSelectedCourseId("");
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-6 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setEnrollModal(false);
+                    setSelectedCourseId("");
+                    setCustomPrice("");
+                    setSelectedStudent(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-semibold"
+                  disabled={enrolling}
+                >
+                  Cancel
+                </button>
 
-            } catch (err) {
-              showError(err.response?.data?.message || "Enrollment failed");
-            }
-          }}
-          className="px-4 py-2 bg-purple-700 text-white rounded"
-        >
-          Enroll
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+                <button
+                  onClick={handleEnrollStudent}
+                  disabled={enrolling || !selectedCourseId || !customPrice}
+                  className="flex-1 px-4 py-3 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {enrolling ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Enrolling...
+                    </>
+                  ) : (
+                    "Enroll Student"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

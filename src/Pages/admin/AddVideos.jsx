@@ -9,7 +9,7 @@ function AddVideos() {
   const [selectedCourse, setSelectedCourse] = useState("");
   const [videoFile, setVideoFile] = useState(null);
   const [title, setTitle] = useState("");
-  const [stage, setStage] = useState("beginner");
+  const [description, setDescription] = useState("");
   const [order, setOrder] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -30,10 +30,11 @@ function AddVideos() {
   const fetchCourses = async () => {
     try {
       const res = await adminApi.get("/courses");
-      setCourses(res.data?.courses || []);
+      const coursesData = res.data?.courses || res.data || [];
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
     } catch (err) {
       showError(err.response?.data?.message || "Failed to fetch courses");
-       setCourses([]);
+      setCourses([]);
     }
   };
 
@@ -84,7 +85,7 @@ function AddVideos() {
     const formData = new FormData();
     formData.append("video", videoFile);
     formData.append("title", title);
-    formData.append("stage", stage);
+    formData.append("description", description);
     formData.append("order", order);
 
     try {
@@ -108,8 +109,8 @@ function AddVideos() {
       
       // Reset form (but keep the selected course if it came from URL)
       setTitle("");
+      setDescription("");
       setVideoFile(null);
-      setStage("beginner");
       setOrder(1);
       setUploadProgress(0);
       document.getElementById("videoInput").value = "";
@@ -131,7 +132,7 @@ function AddVideos() {
               Upload Course Video
             </h1>
             <p className="text-purple-600 mt-2">
-              Add videos to your course with stage selection
+              Add videos to your course with detailed descriptions
             </p>
           </div>
 
@@ -145,11 +146,11 @@ function AddVideos() {
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 required
               >
                 <option value="">-- Choose a Course --</option>
-                {courses.map((course) => (
+                {Array.isArray(courses) && courses.map((course) => (
                   <option key={course._id} value={course._id}>
                     {course.title}
                   </option>
@@ -167,67 +168,43 @@ function AddVideos() {
                 placeholder="e.g., Introduction to Variables"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 required
               />
             </div>
 
-            {/* Stage Selection */}
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-purple-800 mb-2">
-                Stage *
+                Description
               </label>
-              <div className="grid grid-cols-3 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setStage("beginner")}
-                  className={`px-4 py-3 rounded-lg font-medium transition ${
-                    stage === "beginner"
-                      ? "bg-purple-700 text-white"
-                      : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                  }`}
-                >
-                  Beginner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStage("intermediate")}
-                  className={`px-4 py-3 rounded-lg font-medium transition ${
-                    stage === "intermediate"
-                      ? "bg-purple-700 text-white"
-                      : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                  }`}
-                >
-                  Intermediate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStage("advanced")}
-                  className={`px-4 py-3 rounded-lg font-medium transition ${
-                    stage === "advanced"
-                      ? "bg-purple-700 text-white"
-                      : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                  }`}
-                >
-                  Advanced
-                </button>
-              </div>
+              <textarea
+                placeholder="Enter video description (what students will learn in this video)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Optional: Add a brief description of what this video covers
+              </p>
             </div>
 
             {/* Order */}
             <div>
               <label className="block text-sm font-medium text-purple-800 mb-2">
-                Video Order
+                Video Order *
               </label>
               <input
                 type="number"
                 min="1"
                 value={order}
                 onChange={(e) => setOrder(e.target.value)}
-                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                required
               />
               <p className="text-sm text-gray-500 mt-1">
-                Order in which video appears in the stage
+                Order in which video appears in the course (1, 2, 3, etc.)
               </p>
             </div>
 
@@ -272,21 +249,55 @@ function AddVideos() {
                   </span>
                 </label>
               </div>
+              
+              {/* Show selected file info */}
+              {videoFile && (
+                <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium text-purple-900">{videoFile.name}</p>
+                        <p className="text-xs text-purple-600">
+                          {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVideoFile(null);
+                        document.getElementById("videoInput").value = "";
+                      }}
+                      className="text-red-600 hover:text-red-800 transition"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Upload Progress */}
             {loading && (
-              <div>
+              <div className="bg-purple-50 rounded-lg p-4">
                 <div className="flex justify-between text-sm text-purple-600 mb-2">
-                  <span>Uploading...</span>
-                  <span>{uploadProgress}%</span>
+                  <span className="font-medium">Uploading video...</span>
+                  <span className="font-bold">{uploadProgress}%</span>
                 </div>
-                <div className="w-full bg-purple-200 rounded-full h-3">
+                <div className="w-full bg-purple-200 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-purple-700 h-3 rounded-full transition-all duration-300"
+                    className="bg-purple-700 h-3 rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
+                <p className="text-xs text-purple-600 mt-2">
+                  Please don't close this page while uploading
+                </p>
               </div>
             )}
 
@@ -294,23 +305,39 @@ function AddVideos() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-700 text-white font-semibold py-4 rounded-lg hover:bg-purple-800 transition shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-purple-700 text-white font-semibold py-4 rounded-lg hover:bg-purple-800 transition shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? "Uploading..." : "Upload Video"}
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Upload Video
+                </>
+              )}
             </button>
           </form>
 
           {/* Info Box */}
           <div className="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <h3 className="font-semibold text-purple-900 mb-2">
-              📝 Upload Guidelines
+            <h3 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Upload Guidelines
             </h3>
             <ul className="text-sm text-purple-700 space-y-1">
               <li>• H.265 (HEVC) videos will be automatically converted to H.264</li>
               <li>• Supported formats: MP4, MOV, AVI, MKV</li>
               <li>• Maximum file size: 500MB</li>
-              <li>• Videos are organized by stages: Beginner, Intermediate, Advanced</li>
-              <li>• Set order to control video sequence within each stage</li>
+              <li>• Videos are displayed in the order you specify</li>
+              <li>• Add descriptions to help students understand video content</li>
+              <li>• Upload may take time depending on your internet speed</li>
             </ul>
           </div>
         </div>

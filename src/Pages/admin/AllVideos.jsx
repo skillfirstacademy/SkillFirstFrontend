@@ -13,10 +13,10 @@ function AllVideos() {
   const [editingVideo, setEditingVideo] = useState(null);
   const [playingVideo, setPlayingVideo] = useState(null);
   const [selectedTest, setSelectedTest] = useState(null);
-const [testLoading, setTestLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
-    stage: "",
+    description: "",
     order: 1,
   });
 
@@ -28,10 +28,11 @@ const [testLoading, setTestLoading] = useState(false);
     setLoading(true);
     try {
       const res = await adminApi.get("/courses");
-       setCourses(res.data?.courses || []);
+      const coursesData = res.data?.courses || res.data || [];
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
     } catch (err) {
       showError(err.response?.data?.message || "Failed to fetch courses");
-       setCourses([]);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -58,22 +59,19 @@ const [testLoading, setTestLoading] = useState(false);
     }
   };
 
-  
-
-const fetchTest = async (videoId) => {
-  setTestLoading(true);
-  try {
-    const res = await adminApi.get(`/tests/video/${videoId}`);
-    setSelectedTest(res.data);
-    showSuccess("Test loaded");
-  } catch (err) {
-    showError(err.response?.data?.message || "No test found for this video");
-    setSelectedTest(null);
-  } finally {
-    setTestLoading(false);
-  }
-};
-
+  const fetchTest = async (videoId) => {
+    setTestLoading(true);
+    try {
+      const res = await adminApi.get(`/tests/video/${videoId}`);
+      setSelectedTest(res.data);
+      showSuccess("Test loaded");
+    } catch (err) {
+      showError(err.response?.data?.message || "No test found for this video");
+      setSelectedTest(null);
+    } finally {
+      setTestLoading(false);
+    }
+  };
 
   const handleCourseClick = (course) => {
     setSelectedCourse(course);
@@ -108,7 +106,7 @@ const fetchTest = async (videoId) => {
     setEditingVideo(video);
     setEditForm({
       title: video.title,
-      stage: video.stage,
+      description: video.description || "",
       order: video.order,
     });
   };
@@ -313,18 +311,27 @@ const fetchTest = async (videoId) => {
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center gap-3 mb-3">
                               <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
                                 #{video.order}
                               </span>
-                              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium capitalize">
-                                {video.stage}
-                              </span>
+                              {video.stage && (
+                                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium capitalize">
+                                  {video.stage}
+                                </span>
+                              )}
                             </div>
 
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">
                               {video.title}
                             </h3>
+
+                            {/* Video Description */}
+                            {video.description && (
+                              <p className="text-gray-600 text-sm mb-3 leading-relaxed">
+                                {video.description}
+                              </p>
+                            )}
 
                             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                               <div className="flex items-center gap-1">
@@ -422,8 +429,21 @@ const fetchTest = async (videoId) => {
                                 fetchTest(video._id);
                               }}
                               className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                              title="View Test"
                             >
-                              Test
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
                             </button>
                           </div>
                         </div>
@@ -456,27 +476,24 @@ const fetchTest = async (videoId) => {
                   onChange={(e) =>
                     setEditForm({ ...editForm, title: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-purple-800 mb-2">
-                  Stage
+                  Description
                 </label>
-                <select
-                  value={editForm.stage}
+                <textarea
+                  value={editForm.description}
                   onChange={(e) =>
-                    setEditForm({ ...editForm, stage: e.target.value })
+                    setEditForm({ ...editForm, description: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  required
-                >
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
+                  rows={4}
+                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
+                  placeholder="Enter video description"
+                />
               </div>
 
               <div>
@@ -490,7 +507,7 @@ const fetchTest = async (videoId) => {
                   onChange={(e) =>
                     setEditForm({ ...editForm, order: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                   required
                 />
               </div>
@@ -515,48 +532,48 @@ const fetchTest = async (videoId) => {
         </div>
       )}
 
-
       {selectedTest && (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
-      <h2 className="text-2xl font-bold mb-4 text-purple-800">Test Details</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4 text-purple-800">Test Details</h2>
 
-      <p className="text-lg font-semibold mb-2">
-        Stage: {selectedTest.stage.toUpperCase()}
-      </p>
-      <p className="text-sm mb-4">
-        Passing Score: {selectedTest.passingScore}%
-      </p>
+            <p className="text-lg font-semibold mb-2">
+              Stage: {selectedTest.stage.toUpperCase()}
+            </p>
+            <p className="text-sm mb-4">
+              Passing Score: {selectedTest.passingScore}%
+            </p>
 
-      <h3 className="text-xl font-bold mb-3">Questions</h3>
+            <h3 className="text-xl font-bold mb-3">Questions</h3>
 
-      {selectedTest.questions.map((q, idx) => (
-        <div key={idx} className="border rounded-lg p-4 mb-4 bg-purple-50">
-          <p className="font-semibold mb-2">Q{idx + 1}. {q.question}</p>
-          <ul className="ml-4 space-y-1">
-            <li>A. {q.optionA}</li>
-            <li>B. {q.optionB}</li>
-            <li>C. {q.optionC}</li>
-            <li>D. {q.optionD}</li>
-          </ul>
-          <p className="font-bold text-green-600 mt-2">
-            ✔ Correct Answer: Option {q.correctAnswer}
-          </p>
+            {selectedTest.questions.map((q, idx) => (
+              <div key={idx} className="border rounded-lg p-4 mb-4 bg-purple-50">
+                <p className="font-semibold mb-2">
+                  Q{idx + 1}. {q.question}
+                </p>
+                <ul className="ml-4 space-y-1">
+                  <li>A. {q.optionA}</li>
+                  <li>B. {q.optionB}</li>
+                  <li>C. {q.optionC}</li>
+                  <li>D. {q.optionD}</li>
+                </ul>
+                <p className="font-bold text-green-600 mt-2">
+                  ✔ Correct Answer: Option {q.correctAnswer}
+                </p>
+              </div>
+            ))}
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => setSelectedTest(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
-      ))}
-
-      <div className="flex justify-end gap-3 mt-4">
-        <button
-          onClick={() => setSelectedTest(null)}
-          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       {/* Video Player Modal */}
       {playingVideo && (
