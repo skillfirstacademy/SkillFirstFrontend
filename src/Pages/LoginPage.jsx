@@ -20,7 +20,7 @@ function LoginPage() {
   const [showConflictModal, setShowConflictModal] = useState(false);
 
   const handleGoogleSignIn = () => {
-    window.location.href = "http://localhost:5000/users/api/google";
+    window.location.href = "http://localhost:5000/api/users/google";
   };
 
   const getDeviceId = () => {

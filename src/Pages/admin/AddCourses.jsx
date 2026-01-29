@@ -6,8 +6,9 @@ function AddCourses() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPaid, setIsPaid] = useState(false);
-  const [price, setPrice] = useState("");
   const [thumbnail, setThumbnail] = useState(null);
+  const [level, setLevel] = useState(null);
+  const [price, setPrice] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -28,6 +29,7 @@ function AddCourses() {
     formData.append("isPaid", isPaid);
     formData.append("price", isPaid ? price : 0);
     formData.append("thumbnail", thumbnail);
+    formData.append("level", level);
 
     setLoading(true);
 
@@ -103,6 +105,25 @@ function AddCourses() {
                 className="w-full px-4 py-3 border border-purple-200 rounded-lg"
               />
             </div>
+
+            {/* Level */}
+            <div>
+              <label className="block text-sm font-medium text-purple-800 mb-2">
+                Level *
+              </label>
+
+              <select
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+                className="w-full px-4 py-3 border border-purple-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+              >
+                <option value="">Select level</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </div>
+
 
             {/* Paid Checkbox */}
             <div className="flex items-center gap-3">

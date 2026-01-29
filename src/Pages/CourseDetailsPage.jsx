@@ -143,7 +143,7 @@ function CourseDetailsPage() {
         userEmail: user?.email || "",
         userMobile: user?.mobile || user?.phone || "Not provided",
         courseName: course.title,
-        courseLevel: level,
+        courseLevel: course.level,
         courseAmount: course.isPaid ? course.price : 0,
       };
 
@@ -212,27 +212,27 @@ function CourseDetailsPage() {
   };
 
   const downloadCertificate = async () => {
-  try {
-    const res = await adminApi.get(
-      `/students/certificate/${courseId}`,
-      { responseType: "blob" } // 👈 VERY IMPORTANT
-    );
+    try {
+      const res = await adminApi.get(
+        `/students/certificate/${courseId}`,
+        { responseType: "blob" } // 👈 VERY IMPORTANT
+      );
 
-    const blob = new Blob([res.data], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(blob);
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "certificate.pdf";
-    document.body.appendChild(link);
-    link.click();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "certificate.pdf";
+      document.body.appendChild(link);
+      link.click();
 
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    showError("Failed to download certificate");
-  }
-};
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      showError("Failed to download certificate");
+    }
+  };
 
 
   const handleViewTest = (test) => {
@@ -321,6 +321,7 @@ function CourseDetailsPage() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             {/* Course Info */}
             <div>
+              {/* {console.log(course.thumbnail)} */}
               <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-4">
                 {course.isPaid ? `₹${course.price}` : "Free Course"}
               </div>
@@ -380,7 +381,7 @@ function CourseDetailsPage() {
             <div className="flex justify-center">
               {course.thumbnail ? (
                 <img
-                  src={course.thumbnail}
+                  src={`http://localhost:5000${course.thumbnail}`}
                   alt={course.title}
                   className="rounded-2xl shadow-2xl max-w-full h-auto object-cover"
                 />
@@ -399,125 +400,125 @@ function CourseDetailsPage() {
       {/* MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Progress Section - Only show if enrolled */}
-       {isEnrolled && enrollmentData && (
-  <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-    {console.log(enrollmentData)}
-    <div className="flex justify-between items-center mb-4">
-      <h3 className="text-2xl font-bold text-gray-800">Your Progress</h3>
-      <span className="text-sm text-gray-600">
-        {enrollmentData.progress?.watchedVideos?.length || 0} of {enrollmentData.progress?.totalVideos || videos.length} videos completed
-      </span>
-    </div>
+        {isEnrolled && enrollmentData && (
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            {console.log(enrollmentData)}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-gray-800">Your Progress</h3>
+              <span className="text-sm text-gray-600">
+                {enrollmentData.progress?.watchedVideos?.length || 0} of {enrollmentData.progress?.totalVideos || videos.length} videos completed
+              </span>
+            </div>
 
-    <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden mb-6">
-      <div
-        className="bg-gradient-to-r from-purple-600 to-blue-600 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-        style={{ width: `${progress}%` }}
-      >
-        <span className="text-xs font-bold text-white">{progress}%</span>
-      </div>
-    </div>
-
-    {/* Additional Stats - Always Show */}
-    {enrollmentData.progress && (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-purple-50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600">{enrollmentData.progress.streak || 0}</div>
-          <div className="text-sm text-gray-600">Day Streak</div>
-        </div>
-        <div className="bg-blue-50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{enrollmentData.progress.wordsLearned || 0}</div>
-          <div className="text-sm text-gray-600">Words Learned</div>
-        </div>
-        <div className="bg-green-50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-green-600">{enrollmentData.progress.fluencyPercent || 0}%</div>
-          <div className="text-sm text-gray-600">Fluency</div>
-        </div>
-        <div className="bg-orange-50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-orange-600">{enrollmentData.progress.certificatesEarned || 0}</div>
-          <div className="text-sm text-gray-600">Certificates</div>
-        </div>
-      </div>
-    )}
-
-    {/* Certificate Section - Check both status and progress.completed */}
-    {(enrollmentData?.status === 'completed' || enrollmentData?.progress?.completed === true) ? (
-      <div className="mt-6">
-        {enrollmentData?.payment?.status === 'paid' ? (
-          <button
-            onClick={downloadCertificate}
-            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            🎓 Download Certificate
-          </button>
-        ) : (
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xl font-bold text-red-600 mb-2">
-                  Payment Pending
-                </h4>
-                <p className="text-gray-700 mb-4">
-                  <span className="text-green-600 font-semibold">🎉 Congratulations on completing the course!</span>
-                  <br />
-                  To download your certificate, please complete the payment.
-                </p>
-                <div className="bg-white rounded-lg p-4 mb-4 border border-red-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-700 font-medium">Course Amount:</span>
-                    <span className="text-xl font-bold text-gray-900">
-                      ₹{course?.price || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-medium">Paid Amount:</span>
-                    <span className="text-lg font-semibold text-green-600">
-                      ₹{enrollmentData?.payment?.amount || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t">
-                    <span className="text-gray-700 font-medium">Balance Due:</span>
-                    <span className="text-xl font-bold text-red-600">
-                      ₹{(course?.price || 0) - (enrollmentData?.payment?.amount || 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t">
-                    <span className="text-gray-700 font-medium">Payment Status:</span>
-                    <span className="text-sm font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">
-                      {enrollmentData?.payment?.status?.toUpperCase() || 'PENDING'}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 text-center">
-                  <p className="text-amber-800 font-medium flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Please contact admin to complete payment
-                  </p>
-                </div>
+            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden mb-6">
+              <div
+                className="bg-gradient-to-r from-purple-600 to-blue-600 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                style={{ width: `${progress}%` }}
+              >
+                <span className="text-xs font-bold text-white">{progress}%</span>
               </div>
             </div>
+
+            {/* Additional Stats - Always Show */}
+            {enrollmentData.progress && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-purple-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">{enrollmentData.progress.streak || 0}</div>
+                  <div className="text-sm text-gray-600">Day Streak</div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{enrollmentData.progress.wordsLearned || 0}</div>
+                  <div className="text-sm text-gray-600">Words Learned</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">{enrollmentData.progress.fluencyPercent || 0}%</div>
+                  <div className="text-sm text-gray-600">Fluency</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-orange-600">{enrollmentData.progress.certificatesEarned || 0}</div>
+                  <div className="text-sm text-gray-600">Certificates</div>
+                </div>
+              </div>
+            )}
+
+            {/* Certificate Section - Check both status and progress.completed */}
+            {(enrollmentData?.status === 'completed' || enrollmentData?.progress?.completed === true) ? (
+              <div className="mt-6">
+                {enrollmentData?.payment?.status === 'paid' ? (
+                  <button
+                    onClick={downloadCertificate}
+                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    🎓 Download Certificate
+                  </button>
+                ) : (
+                  <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-xl font-bold text-red-600 mb-2">
+                          Payment Pending
+                        </h4>
+                        <p className="text-gray-700 mb-4">
+                          <span className="text-green-600 font-semibold">🎉 Congratulations on completing the course!</span>
+                          <br />
+                          To download your certificate, please complete the payment.
+                        </p>
+                        <div className="bg-white rounded-lg p-4 mb-4 border border-red-200">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-700 font-medium">Course Amount:</span>
+                            <span className="text-xl font-bold text-gray-900">
+                              ₹{course?.price || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700 font-medium">Paid Amount:</span>
+                            <span className="text-lg font-semibold text-green-600">
+                              ₹{enrollmentData?.payment?.amount || 0}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t">
+                            <span className="text-gray-700 font-medium">Balance Due:</span>
+                            <span className="text-xl font-bold text-red-600">
+                              ₹{(course?.price || 0) - (enrollmentData?.payment?.amount || 0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center mt-2 pt-2 border-t">
+                            <span className="text-gray-700 font-medium">Payment Status:</span>
+                            <span className="text-sm font-bold text-red-600 bg-red-100 px-3 py-1 rounded-full">
+                              {enrollmentData?.payment?.status?.toUpperCase() || 'PENDING'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 text-center">
+                          <p className="text-amber-800 font-medium flex items-center justify-center gap-2">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Please contact admin to complete payment
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center">
+                <p className="text-blue-800 font-medium">
+                  📚 Keep learning! Complete all videos to unlock your certificate.
+                </p>
+              </div>
+            )}
           </div>
         )}
-      </div>
-    ) : (
-      <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center">
-        <p className="text-blue-800 font-medium">
-          📚 Keep learning! Complete all videos to unlock your certificate.
-        </p>
-      </div>
-    )}
-  </div>
-)}
 
         {/* Course Content */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
