@@ -47,6 +47,14 @@ function CourseDetailsPage() {
     // Local fallback (instant UI update)
     return completedVideos.has(videoId);
   };
+  const isTestPassed = (videoId) => {
+    console.log("enrol", enrollmentData)
+    if (!Array.isArray(enrollmentData?.progress?.passedTests)) return false;
+
+    return enrollmentData.progress.passedTests
+      .map(id => id.toString())
+      .includes(videoId);
+  };
 
 
   const fetchCourseData = async () => {
@@ -634,7 +642,7 @@ function CourseDetailsPage() {
                     {isExpanded && (
                       <div className="px-6 pb-6 space-y-4 bg-gradient-to-b from-gray-50 to-white">
                         {/* Practice Test Info */}
-                        {test && isVideoCompleted(video._id) && (
+                        {test && isVideoCompleted(video._id) && !isTestPassed(video._id) && (
                           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-4">
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -760,7 +768,7 @@ function CourseDetailsPage() {
 
       {/* TEST VIEWER MODAL */}
       {viewingTest && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0  backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-blue-600 text-white">
               <div>
@@ -769,6 +777,11 @@ function CourseDetailsPage() {
                   {viewingTest.questions?.length || 0} Questions
                   {viewingTest.passingScore && ` • ${viewingTest.passingScore}% required to pass`}
                 </p>
+                {isTestPassed(video._id) && (
+                  <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+                    ✅ Test Passed
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => setViewingTest(null)}

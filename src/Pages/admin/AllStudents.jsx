@@ -373,7 +373,7 @@ function AllStudents() {
 
         {/* Student Details Modal */}
         {viewingStudent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-gradient-to-r from-purple-700 to-purple-900 text-white p-6 rounded-t-xl">
                 <div className="flex items-center justify-between">
@@ -481,7 +481,7 @@ function AllStudents() {
 
         {/* Enrollment Modal */}
         {enrollModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-purple-800">

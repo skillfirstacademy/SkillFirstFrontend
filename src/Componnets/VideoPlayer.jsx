@@ -163,7 +163,7 @@ const VideoPlayer = ({ videoUrl, onClose, onError, title }) => {
         </div>
 
         {/* Video Player */}
-        <div className="w-full bg-black rounded-b-lg overflow-hidden">
+        <div className="w-full backdrop-blur rounded-b-lg overflow-hidden">
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-96 text-white">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mb-4"></div>

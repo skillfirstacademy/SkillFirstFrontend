@@ -7,7 +7,7 @@ function AddTest() {
   const [videos, setVideos] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedVideo, setSelectedVideo] = useState("");
-  const [stage, setStage] = useState("beginner");
+  // const [stage, setStage] = useState("beginner");
 
   const [questions, setQuestions] = useState([
     {
@@ -101,7 +101,7 @@ function AddTest() {
     try {
       const payload = {
         courseId: selectedCourse,
-        stage,
+        // stage,
         passingScore: Number(passingScore),
         questions: questions.map(q => ({
           question: q.question.trim(),
@@ -119,7 +119,7 @@ function AddTest() {
       // Reset form
       setSelectedCourse("");
       setSelectedVideo("");
-      setStage("beginner");
+      // setStage("beginner");
       setPassingScore(70);
       setVideos([]);
       setQuestions([
@@ -163,7 +163,7 @@ function AddTest() {
                 className="w-full border border-purple-200 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 required
               >
-                <option value="">-- Choose a Course --</option>
+                <option value="">Choose a Course</option>
                 {courses.map((c) => (
                   <option key={c._id} value={c._id}>
                     {c.title}
@@ -184,11 +184,11 @@ function AddTest() {
                 disabled={!selectedCourse}
                 required
               >
-                <option value="">-- Choose a Video --</option>
+                <option value="">Choose a Video</option>
                 {videos.length > 0 ? (
                   videos.map((v) => (
                     <option key={v._id} value={v._id}>
-                      {v.title} ({v.stage})
+                      {v.title}
                     </option>
                   ))
                 ) : (
@@ -196,22 +196,6 @@ function AddTest() {
                     {selectedCourse ? "No videos available" : "Select a course first"}
                   </option>
                 )}
-              </select>
-            </div>
-
-            {/* Stage */}
-            <div>
-              <label className="block mb-2 font-semibold text-gray-700">
-                Stage *
-              </label>
-              <select
-                value={stage}
-                onChange={(e) => setStage(e.target.value)}
-                className="w-full border border-purple-200 rounded-lg p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
               </select>
             </div>
 
