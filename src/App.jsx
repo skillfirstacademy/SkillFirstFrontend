@@ -79,9 +79,9 @@ function App() {
           }
         >
           <Route path="dashboard" element={<Dashboard />} />
+        </Route>
           <Route path="student/test/:videoId" element={<StudentTestPage />} />
           <Route path="student/test-result/:testId" element={<StudentTestResultPage />} />
-        </Route>
 
 
         {/* ADMIN ROUTES - All nested under AdminLayout */}
