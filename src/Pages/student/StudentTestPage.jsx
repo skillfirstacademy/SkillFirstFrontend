@@ -61,7 +61,7 @@ function StudentTestPage() {
 
             // console.log("Answers state before submit:", answers);
             // console.log("Formatted answers:", formattedAnswers);
-            // console.log("Payload:", { answers: formattedAnswers });
+            console.log("Payload:", { answers: formattedAnswers });
 
             const res = await adminApi.post(`/test-attempt/${test._id}`, {
                 answers: formattedAnswers,

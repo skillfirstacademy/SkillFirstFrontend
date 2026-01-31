@@ -630,7 +630,7 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
     return (
         <div
             ref={containerRef}
-            className="fixed inset-0 bg-black z-50 flex flex-col"
+            className="fixed inset-0 backdrop-blur z-50 flex flex-col"
             onMouseMove={handleMouseMove}
         >
             {/* Header */}
