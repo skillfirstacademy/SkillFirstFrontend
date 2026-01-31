@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import VideoPlayer from "../Componnets/VideoPlayer";
@@ -7,9 +7,11 @@ import { showError, showSuccess } from "../Componnets/AppToaster";
 import adminApi from "../api/adminApi";
 import StudentVideoplayer from "../Componnets/StudentVideoplayer";
 
+
 function CourseDetailsPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Get user from Redux
   const { user } = useSelector((state) => state.auth);
@@ -25,7 +27,20 @@ function CourseDetailsPage() {
   const [expandedVideo, setExpandedVideo] = useState(null);
   const [enrollingLevel, setEnrollingLevel] = useState(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [testAttempts, setTestAttempts] = useState([]);
   const [enrollmentData, setEnrollmentData] = useState(null);
+  const [showPassedModal, setShowPassedModal] = useState(false);
+  const [passedTestData, setPassedTestData] = useState(null);
+
+  // Handle test passed state from navigation
+  useEffect(() => {
+    if (location.state?.testPassed && location.state?.testData) {
+      setPassedTestData(location.state.testData);
+      setShowPassedModal(true);
+      // Clear the state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!courseId || courseId === "undefined") {
@@ -47,15 +62,109 @@ function CourseDetailsPage() {
     // Local fallback (instant UI update)
     return completedVideos.has(videoId);
   };
-  const isTestPassed = (videoId) => {
-    console.log("enrol", enrollmentData)
-    if (!Array.isArray(enrollmentData?.progress?.passedTests)) return false;
 
-    return enrollmentData.progress.passedTests
-      .map(id => id.toString())
-      .includes(videoId);
+  const fetchTestAttempts = async () => {
+    try {
+      const res = await adminApi.get("/test-attempt/my");
+      // console.log("testatt", res.data)
+      setTestAttempts(res.data || []);
+    } catch (err) {
+      console.error("Failed to fetch test attempts");
+    }
   };
 
+  useEffect(() => {
+    if (isEnrolled) {
+      fetchTestAttempts();
+    }
+  }, [isEnrolled]);
+
+  const isTestPassed = (videoId) => {
+    if (!videoId) return false;
+
+    const passed = testAttempts.some(
+      (attempt) =>
+        attempt.videoId?._id?.toString() === videoId.toString() &&
+        attempt.isPassed === true
+    );
+    
+    // console.log(`Checking test passed for video ${videoId}:`, passed);
+    return passed;
+  };
+
+  const getTestPassedDate = (videoId) => {
+    if (!videoId) return null;
+
+    const passedAttempt = testAttempts.find(
+      (attempt) =>
+        attempt.videoId?._id?.toString() === videoId.toString() &&
+        attempt.isPassed === true
+    );
+
+    return passedAttempt?.completedAt || passedAttempt?.createdAt;
+  };
+
+  const canUnlockNextVideo = (videoIndex) => {
+    if (!isEnrolled || !enrollmentData) return false;
+    
+    // Backend controls unlocking via currentDay (updated by cron job)
+    // Each video unlocks one day at a time
+    const currentDay = enrollmentData.progress?.currentDay || 1;
+    
+    // Video at index 0 requires currentDay >= 1
+    // Video at index 1 requires currentDay >= 2, etc.
+    const requiredDay = videoIndex + 1;
+    
+    // console.log(`Video ${videoIndex} requires day ${requiredDay}, current day: ${currentDay}`);
+    
+    return currentDay >= requiredDay;
+  };
+
+  const getUnlockTimeRemaining = (videoIndex) => {
+    if (!enrollmentData || videoIndex === 0) return null;
+
+    const currentDay = enrollmentData.progress?.currentDay || 1;
+    const requiredDay = videoIndex + 1;
+
+    // If already unlocked, no timer needed
+    if (currentDay >= requiredDay) return null;
+
+    // Calculate time until next unlock (cron runs every 10 minutes for testing)
+    const now = new Date();
+    
+    // For testing: next run is within 10 minutes
+    const minutes = now.getMinutes();
+    const nextInterval = Math.ceil(minutes / 10) * 10;
+    const nextRun = new Date(now);
+    
+    if (nextInterval === 60) {
+      nextRun.setHours(nextRun.getHours() + 1);
+      nextRun.setMinutes(0);
+    } else {
+      nextRun.setMinutes(nextInterval);
+    }
+    nextRun.setSeconds(0);
+    nextRun.setMilliseconds(0);
+
+    // Calculate how many days away this video is
+    const daysRemaining = requiredDay - currentDay;
+    
+    // Approximate time until this video unlocks
+    // Each day unlocks after the cron runs, so multiply by 10 minutes per day
+    const timeUntilThisVideo = nextRun - now + ((daysRemaining - 1) * 10 * 60 * 1000);
+    
+    if (timeUntilThisVideo <= 0) return null;
+
+    const hours = Math.floor(timeUntilThisVideo / (1000 * 60 * 60));
+    const minutes_remaining = Math.floor((timeUntilThisVideo % (1000 * 60 * 60)) / (1000 * 60));
+
+    return { 
+      hours, 
+      minutes: minutes_remaining, 
+      unlockDate: new Date(now.getTime() + timeUntilThisVideo),
+      daysRemaining
+    };
+  };
 
   const fetchCourseData = async () => {
     try {
@@ -113,7 +222,7 @@ function CourseDetailsPage() {
         setEnrollmentData(null);
       }
     } catch (error) {
-      console.log("Not enrolled or error checking enrollment");
+      // console.log("Not enrolled or error checking enrollment");
       setIsEnrolled(false);
       setEnrollmentData(null);
     }
@@ -155,7 +264,7 @@ function CourseDetailsPage() {
         courseAmount: course.isPaid ? course.price : 0,
       };
 
-      console.log("📧 Sending enrollment request:", enrollmentData);
+      // console.log("📧 Sending enrollment request:", enrollmentData);
 
       const response = await adminApi.post(
         "/students/buy/enroll",
@@ -185,24 +294,7 @@ function CourseDetailsPage() {
   };
 
   const isVideoUnlocked = (videoIndex) => {
-    if (!isEnrolled) return false;
-
-    // If no enrollment data, unlock first video only
-    if (!enrollmentData) {
-      return videoIndex === 0;
-    }
-
-    // Check if video unlocking is based on progress
-    // For first video, always unlock
-    if (videoIndex === 0) return true;
-
-    // For subsequent videos, check if previous video is watched
-    if (enrollmentData.progress?.watchedVideos) {
-      const previousVideoId = videos[videoIndex - 1]?._id;
-      return enrollmentData.progress.watchedVideos.includes(previousVideoId);
-    }
-
-    return videoIndex === 0;
+    return canUnlockNextVideo(videoIndex);
   };
 
   const handlePlayVideo = (video, videoIndex) => {
@@ -212,7 +304,20 @@ function CourseDetailsPage() {
     }
 
     if (!isVideoUnlocked(videoIndex)) {
-      showError("This video is locked. Complete previous videos to unlock.");
+      const timeRemaining = getUnlockTimeRemaining(videoIndex);
+      const currentDay = enrollmentData?.progress?.currentDay || 1;
+      const requiredDay = videoIndex + 1;
+      
+      if (timeRemaining) {
+        const daysText = timeRemaining.daysRemaining > 1 
+          ? `${timeRemaining.daysRemaining} days` 
+          : 'tomorrow';
+        showError(
+          `This video unlocks ${daysText}. Next unlock in ${timeRemaining.hours}h ${timeRemaining.minutes}m`
+        );
+      } else {
+        showError(`This video unlocks on Day ${requiredDay}. You're currently on Day ${currentDay}.`);
+      }
       return;
     }
 
@@ -242,13 +347,10 @@ function CourseDetailsPage() {
     }
   };
 
-
-  const handleViewTest = (test) => {
-    if (!isEnrolled) {
-      showError("Please enroll in this course to access tests");
-      return;
-    }
-    setViewingTest(test);
+  const handleTestPassed = (testData) => {
+    setPassedTestData(testData);
+    setShowPassedModal(true);
+    fetchTestAttempts(); // Refresh test attempts
   };
 
   const toggleVideoExpand = (videoId) => {
@@ -313,6 +415,79 @@ function CourseDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+      {/* TEST PASSED MODAL */}
+      {showPassedModal && passedTestData && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
+            {/* Green gradient header */}
+            <div className="bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 p-8 text-center relative overflow-hidden">
+              {/* Animated background elements */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full -translate-x-16 -translate-y-16"></div>
+                <div className="absolute bottom-0 right-0 w-40 h-40 bg-white rounded-full translate-x-20 translate-y-20"></div>
+              </div>
+              
+              {/* Success icon */}
+              <div className="relative mb-4">
+                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce-slow">
+                  <svg className="w-14 h-14 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              
+              <h2 className="text-3xl font-bold text-white mb-2">🎉 Congratulations!</h2>
+              <p className="text-green-50 text-lg">You've passed the test!</p>
+            </div>
+
+            {/* Content */}
+            <div className="p-8">
+              <div className="space-y-4 mb-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-700 font-medium">Your Score:</span>
+                    <span className="text-2xl font-bold text-green-600">
+                      {passedTestData.score}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-medium">Passing Score:</span>
+                    <span className="text-lg font-semibold text-gray-600">
+                      {passedTestData.passingScore}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-amber-900 font-semibold mb-1">Next Video Unlocks In:</p>
+                      <p className="text-amber-700 text-sm">
+                        24 hours from now. Come back tomorrow to continue your learning journey!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowPassedModal(false);
+                  setPassedTestData(null);
+                  fetchCourseData(); // Refresh the page data
+                }}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
+              >
+                Continue Learning
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HERO SECTION */}
       <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -329,7 +504,6 @@ function CourseDetailsPage() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             {/* Course Info */}
             <div>
-              {/* {console.log(course.thumbnail)} */}
               <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-4">
                 {course.isPaid ? `₹${course.price}` : "Free Course"}
               </div>
@@ -410,12 +584,16 @@ function CourseDetailsPage() {
         {/* Progress Section - Only show if enrolled */}
         {isEnrolled && enrollmentData && (
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            {console.log(enrollmentData)}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl font-bold text-gray-800">Your Progress</h3>
-              <span className="text-sm text-gray-600">
-                {enrollmentData.progress?.watchedVideos?.length || 0} of {enrollmentData.progress?.totalVideos || videos.length} videos completed
-              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-sm bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-semibold">
+                  📅 Day {enrollmentData.progress?.currentDay || 1}
+                </span>
+                <span className="text-sm text-gray-600">
+                  {enrollmentData.progress?.watchedVideos?.length || 0} of {enrollmentData.progress?.totalVideos || videos.length} videos completed
+                </span>
+              </div>
             </div>
 
             <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden mb-6">
@@ -430,6 +608,7 @@ function CourseDetailsPage() {
             {/* Additional Stats - Always Show */}
             {enrollmentData.progress && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {console.log("first", enrollmentData)}
                 <div className="bg-purple-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-purple-600">{enrollmentData.progress.streak || 0}</div>
                   <div className="text-sm text-gray-600">Day Streak</div>
@@ -531,19 +710,6 @@ function CourseDetailsPage() {
         {/* Course Content */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Course Videos</h2>
-          {enrollmentData?.progress?.completed && (
-            <button
-              onClick={() =>
-                window.open(
-                  `http://localhost:5000/api/certificate/${courseId}`,
-                  "_blank"
-                )
-              }
-              className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold"
-            >
-              🎓 Download Certificate
-            </button>
-          )}
           {videos.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🎓</div>
@@ -557,6 +723,8 @@ function CourseDetailsPage() {
                 const isExpanded = expandedVideo === video._id;
                 const isCompleted = isVideoCompleted(video._id);
                 const isUnlocked = isVideoUnlocked(index);
+                const testPassed = test ? isTestPassed(video._id) : false;
+                const timeUntilUnlock = getUnlockTimeRemaining(index);
 
                 return (
                   <div key={video._id} className="border-2 border-gray-200 hover:border-purple-300 rounded-xl overflow-hidden transition-all">
@@ -585,22 +753,44 @@ function CourseDetailsPage() {
                             <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">
                               {index + 1}
                             </div>
+                            {/* Lock/Unlock Badge */}
+                            {!isUnlocked && (
+                              <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                🔒
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${isCompleted
-                            ? "bg-green-500 text-white"
-                            : "bg-gradient-to-br from-purple-500 to-blue-500 text-white"
-                            }`}>
-                            {isCompleted ? "✓" : index + 1}
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${
+                            isCompleted
+                              ? "bg-green-500 text-white"
+                              : !isUnlocked
+                              ? "bg-gray-400 text-white"
+                              : "bg-gradient-to-br from-purple-500 to-blue-500 text-white"
+                          }`}>
+                            {!isUnlocked ? "🔒" : isCompleted ? "✓" : index + 1}
                           </div>
                         )}
                       </div>
 
                       {/* Video Info */}
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-lg font-semibold text-gray-800 mb-1">
-                          {video.title}
-                        </h4>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-lg font-semibold text-gray-800">
+                            {video.title}
+                          </h4>
+                          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
+                            Day {index + 1}
+                          </span>
+                          {testPassed && (
+                            <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Test Passed
+                            </span>
+                          )}
+                        </div>
                         {video.description && (
                           <p className="text-sm text-gray-600 line-clamp-2">
                             {video.description}
@@ -624,7 +814,15 @@ function CourseDetailsPage() {
                             )}
                           </div>
                         )}
-
+                        {/* Unlock Timer */}
+                        {timeUntilUnlock && (
+                          <div className="mt-2 inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-semibold">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Unlocks in {timeUntilUnlock.hours}h {timeUntilUnlock.minutes}m
+                          </div>
+                        )}
                       </div>
 
                       {/* Expand Icon */}
@@ -642,45 +840,45 @@ function CourseDetailsPage() {
                     {isExpanded && (
                       <div className="px-6 pb-6 space-y-4 bg-gradient-to-b from-gray-50 to-white">
                         {/* Practice Test Info */}
-                        {test && isVideoCompleted(video._id) && !isTestPassed(video._id) && (
-                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-4">
+                        {test && isVideoCompleted(video._id) && (
+                          <div className={`rounded-lg p-4 border-2 ${
+                            testPassed
+                              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+                              : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                          }`}>
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                testPassed ? "bg-green-600" : "bg-blue-600"
+                              }`}>
                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  {testPassed ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  )}
                                 </svg>
                               </div>
                               <div className="flex-1">
-                                <h5 className="font-semibold text-blue-900 mb-1">Practice Test Available</h5>
-                                <p className="text-sm text-blue-700 mb-3">
-                                  Test your knowledge with {test.questions?.length || 0} questions
-                                  {test.passingScore && ` • ${test.passingScore}% passing score`}
+                                <h5 className={`font-semibold mb-1 ${testPassed ? "text-green-900" : "text-blue-900"}`}>
+                                  {testPassed ? "✅ Test Passed!" : "Practice Test Available"}
+                                </h5>
+                                <p className={`text-sm mb-3 ${testPassed ? "text-green-700" : "text-blue-700"}`}>
+                                  {testPassed
+                                    ? "Great job! You've successfully passed this test."
+                                    : `Test your knowledge with ${test.questions?.length || 0} questions${test.passingScore ? ` • ${test.passingScore}% passing score` : ""}`
+                                  }
                                 </p>
-                                {/* <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (isEnrolled) {
-                                      handleViewTest(test);
-                                    } else {
-                                      showError("Please enroll to access practice tests");
-                                    }
-                                  }}
-                                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                  </svg>
-                                  {isEnrolled ? 'Start Test' : 'Enroll to Access Test'}
-                                </button> */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/student/test/${video._id}`);
-                                  }}
-                                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
-                                >
-                                  Start Test
-                                </button>
+                                {!testPassed && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/student/test/${video._id}`);
+                                    }}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
+                                  >
+                                    Start Test
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -705,10 +903,18 @@ function CourseDetailsPage() {
                             ) : (
                               <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-center">
                                 <p className="text-amber-800 font-medium mb-2">
-                                  🔒 Complete previous videos to unlock this content
+                                  🔒 {timeUntilUnlock
+                                    ? `This video unlocks ${timeUntilUnlock.daysRemaining > 1 ? `in ${timeUntilUnlock.daysRemaining} days` : 'tomorrow'} (Day ${index + 1})`
+                                    : `This video unlocks on Day ${index + 1}. You're currently on Day ${enrollmentData?.progress?.currentDay || 1}.`
+                                  }
                                 </p>
-                                <p className="text-sm text-amber-600">
-                                  Keep learning to access all course materials
+                                {timeUntilUnlock && (
+                                  <p className="text-sm text-amber-600">
+                                    Next unlock in approximately {timeUntilUnlock.hours}h {timeUntilUnlock.minutes}m
+                                  </p>
+                                )}
+                                <p className="text-xs text-amber-600 mt-2">
+                                  💡 Videos unlock automatically each day via our system
                                 </p>
                               </div>
                             )
@@ -766,115 +972,16 @@ function CourseDetailsPage() {
         )}
       </div>
 
-      {/* TEST VIEWER MODAL */}
-      {viewingTest && (
-        <div className="fixed inset-0  backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-              <div>
-                <h2 className="text-2xl font-bold">Practice Test</h2>
-                <p className="text-sm opacity-90">
-                  {viewingTest.questions?.length || 0} Questions
-                  {viewingTest.passingScore && ` • ${viewingTest.passingScore}% required to pass`}
-                </p>
-                {isTestPassed(video._id) && (
-                  <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
-                    ✅ Test Passed
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => setViewingTest(null)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              {viewingTest.questions && viewingTest.questions.length > 0 ? (
-                <div className="space-y-6">
-                  {viewingTest.questions.map((question, idx) => {
-                    const questionText = question.question;
-                    const options = question.options || [];
-                    const correctAnswer = question.correctAnswer;
-
-                    return (
-                      <div key={idx} className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
-                        <div className="flex gap-4 mb-4">
-                          <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold flex-shrink-0">
-                            {idx + 1}
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-800 flex-1">{questionText}</h3>
-                        </div>
-                        {options.length > 0 ? (
-                          <div className="space-y-3 ml-12">
-                            {options.map((option, optIdx) => {
-                              const isCorrect = correctAnswer === optIdx;
-                              return (
-                                <div
-                                  key={optIdx}
-                                  className={`p-4 rounded-lg border-2 transition-colors ${isCorrect
-                                    ? "bg-green-50 border-green-500"
-                                    : "bg-white border-gray-200"
-                                    }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isCorrect ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700"
-                                      }`}>
-                                      {String.fromCharCode(65 + optIdx)}
-                                    </div>
-                                    <span className="flex-1">{option}</span>
-                                    {isCorrect && (
-                                      <span className="text-sm font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">
-                                        Correct Answer
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="ml-12 text-gray-500 italic">
-                            No options available for this question
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-16">
-                  <div className="text-6xl mb-4">📝</div>
-                  <p className="text-xl text-gray-600">No questions available for this test</p>
-                </div>
-              )}
-            </div>
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
-              <p className="text-sm text-gray-600 mb-4 text-center">Review all questions and answers</p>
-              <button
-                onClick={() => setViewingTest(null)}
-                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl w-full"
-              >
-                Close Test
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* VIDEO PLAYER MODAL */}
       {playingVideo && (
         <StudentVideoplayer
           videoUrl={`http://localhost:5000/api/videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
-          videoId={playingVideo._id}           // ADD
-          courseId={courseId}                   // ADD
+          videoId={playingVideo._id}
+          courseId={courseId}
           onClose={() => {
             setPlayingVideo(null);
-            checkEnrollmentStatus(courseId);    // Refresh to show green tick
+            checkEnrollmentStatus(courseId);
           }}
           onComplete={(data) => {
             console.log("Video completed:", data);
@@ -888,6 +995,7 @@ function CourseDetailsPage() {
           }}
         />
       )}
+
     </div>
   );
 }

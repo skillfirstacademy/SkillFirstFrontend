@@ -24,7 +24,7 @@ function Footer() {
     { name: "About Us", href: "/about" },
     { name: "All Courses", href: "/courses" },
     { name: "Contact", href: "/contact" },
-    { name: "Blog", href: "/blog" },
+    // { name: "Blog", href: "/blog" },
   ];
 
   const legal = [
@@ -164,7 +164,7 @@ function Footer() {
         <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-purple-300 text-sm text-center md:text-left">
-              © {currentYear} SkillFirst. All rights reserved. Made with ❤️ in
+              © {currentYear} SkillFirst. All rights reserved.
               India
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm">

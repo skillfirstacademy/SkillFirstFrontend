@@ -76,7 +76,7 @@ const AdminLayout = () => {
       subItems: [
         { label: 'All Students', route: '/admin/all-students' },
         { label: 'Add Student', route: '/admin/add-students' },
-        { label: 'Enroll Students', route: '/admin/enroll-students' }
+        { label: 'Enrolled Students', route: '/admin/enroll-students' }
       ]
     },
     {
