@@ -144,9 +144,9 @@ const AdminDashboard = () => {
                 <div className={`p-3 ${card.bgColor} rounded-lg`}>
                   <Icon className={`w-6 h-6 ${card.iconColor}`} />
                 </div>
-                <span className="text-sm font-medium text-green-600">
+                {/* <span className="text-sm font-medium text-green-600">
                   {card.change}
-                </span>
+                </span> */}
               </div>
               <h3 className="text-gray-600 text-sm font-medium mb-1">
                 {card.label}
@@ -160,7 +160,12 @@ const AdminDashboard = () => {
       </div>
 
       {/* Tabs — Students / Courses / Enrollments / Admins etc */}
-      <Tabs activeTab={activeTab} />
+     <Tabs 
+  activeTab={activeTab} 
+  users={users}
+  courses={courses}
+  stats={stats}
+/>
     </>
   );
 };

@@ -57,7 +57,7 @@ function AdminCourseDetail() {
       // Fetch tests for each video (in parallel for better performance)
       const testPromises = videosList.map(async (video) => {
         try {
-          const response = await adminApi.get(`/tests/video/${video._id}`);
+         const response = await adminApi.get(`/admin/tests/video/${video._id}`);
           if (response.data) {
             testsData[video._id] = response.data;
           }

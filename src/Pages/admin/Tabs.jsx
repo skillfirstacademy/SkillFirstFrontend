@@ -23,12 +23,13 @@ function Tabs({ activeTab }) {
     try {
       setLoading(true);
 
-      const [usersRes, coursesRes, enrollmentsRes, statsRes] = await Promise.all([
-        adminApi.get("/admin/users"),
-        adminApi.get("/courses"),
-        adminApi.get("/admin/enrollments"),
-        adminApi.get("/admin/enrollments/stats"),
-      ]);
+      const [usersRes, coursesRes, enrollmentsRes, statsRes] =
+        await Promise.all([
+          adminApi.get("/admin/users"),
+          adminApi.get("/courses"),
+          adminApi.get("/admin/enrollments"),
+          adminApi.get("/admin/enrollments/stats"),
+        ]);
 
       setUsers(usersRes.data);
       setCourses(coursesRes.data);
@@ -142,18 +143,30 @@ function Tabs({ activeTab }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {courses.map((course) => (
-            <div key={course._id} className="p-4 bg-blue-50 rounded-lg border">
-              <h4 className="font-semibold">{course.title}</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                {enrollments.filter((e) => e.course?._id === course._id).length}{" "}
-                students enrolled
-              </p>
-              <button className="mt-3 text-purple-700 hover:underline">
-                Manage →
-              </button>
-            </div>
-          ))}
+          {Array.isArray(courses) && courses.length > 0 ? (
+            courses.map((course) => (
+              <div
+                key={course._id}
+                className="p-4 bg-blue-50 rounded-lg border"
+              >
+                <h4 className="font-semibold">{course.title}</h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  {
+                    enrollments.filter((e) => e.course?._id === course._id)
+                      .length
+                  }{" "}
+                  students enrolled
+                </p>
+                <button className="mt-3 text-purple-700 hover:underline">
+                  Manage →
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 text-center py-8">
+              No courses available
+            </p>
+          )}
         </div>
       </div>
     );
@@ -254,7 +267,9 @@ function Tabs({ activeTab }) {
             Certificates (Coming Soon)
           </h2>
         </div>
-        <p className="text-gray-600">Certificate tracking will be added after completion module is ready.</p>
+        <p className="text-gray-600">
+          Certificate tracking will be added after completion module is ready.
+        </p>
       </div>
     );
   }
@@ -264,7 +279,7 @@ function Tabs({ activeTab }) {
   ----------------------------- */
   if (activeTab === "instructors") {
     const admins = users.filter(
-      (u) => u.role === "admin" || u.role === "superadmin"
+      (u) => u.role === "admin" || u.role === "superadmin",
     );
 
     return (
@@ -278,7 +293,10 @@ function Tabs({ activeTab }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {admins.map((a) => (
-            <div key={a._id} className="p-4 bg-indigo-50 rounded-lg text-center">
+            <div
+              key={a._id}
+              className="p-4 bg-indigo-50 rounded-lg text-center"
+            >
               <div className="w-14 h-14 bg-indigo-600 text-white rounded-full mx-auto flex items-center justify-center text-xl font-bold">
                 {a.name.charAt(0)}
               </div>
@@ -298,7 +316,7 @@ function Tabs({ activeTab }) {
   if (activeTab === "completion") {
     const completionRate = stats
       ? Math.floor(
-          (stats.paidEnrollments / (stats.totalEnrollments || 1)) * 100
+          (stats.paidEnrollments / (stats.totalEnrollments || 1)) * 100,
         )
       : 0;
 
@@ -315,9 +333,7 @@ function Tabs({ activeTab }) {
 
         <div className="p-4 bg-teal-50 rounded-lg">
           <p className="text-sm">Overall Completion</p>
-          <p className="text-4xl font-bold text-teal-700">
-            {completionRate}%
-          </p>
+          <p className="text-4xl font-bold text-teal-700">{completionRate}%</p>
         </div>
       </div>
     );
