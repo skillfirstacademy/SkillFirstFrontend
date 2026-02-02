@@ -25,6 +25,8 @@ const AdminDashboard = () => {
         adminApi.get("/admin/enrollments/stats"),
       ]);
 
+      console.log("courses", coursesRes)  
+
       setUsers(usersRes.data);
       setCourses(coursesRes.data);
       setStats(enrollmentStatsRes.data.stats);
@@ -65,7 +67,7 @@ const AdminDashboard = () => {
       id: "courses",
       icon: BookOpen,
       label: "Total Courses",
-      value: courses.length,
+      value: courses.count,
       change: "+3",
       bgColor: "bg-blue-100",
       iconColor: "text-blue-700",
@@ -134,11 +136,10 @@ const AdminDashboard = () => {
             <div
               key={card.id}
               onClick={() => setActiveTab(card.id)}
-              className={`bg-white rounded-2xl shadow-lg p-6 border cursor-pointer transition-all duration-300 ${
-                activeTab === card.id
+              className={`bg-white rounded-2xl shadow-lg p-6 border cursor-pointer transition-all duration-300 ${activeTab === card.id
                   ? "border-purple-500 shadow-xl ring-2 ring-purple-300"
                   : "border-purple-100 hover:shadow-xl"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 ${card.bgColor} rounded-lg`}>
@@ -160,12 +161,12 @@ const AdminDashboard = () => {
       </div>
 
       {/* Tabs — Students / Courses / Enrollments / Admins etc */}
-     <Tabs 
-  activeTab={activeTab} 
-  users={users}
-  courses={courses}
-  stats={stats}
-/>
+      <Tabs
+        activeTab={activeTab}
+        users={users}
+        courses={courses}
+        stats={stats}
+      />
     </>
   );
 };

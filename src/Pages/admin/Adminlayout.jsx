@@ -109,13 +109,13 @@ const AdminLayout = () => {
         { label: 'All Videos', route: '/admin/all-videos' }
       ]
     },
-    
+
   ];
 
   // Auto-expand menus based on current route
   useEffect(() => {
     const path = location.pathname;
-    
+
     // Find which dropdown the current route belongs to
     const activeDropdown = menuItems.find(item => {
       if (item.type === 'dropdown') {
@@ -153,14 +153,21 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-2xl transition-all duration-300 ease-in-out z-30 ${sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full'
-          }`}
+        className={`fixed top-0 left-0 h-screen bg-white shadow-2xl transition-all duration-300 ease-in-out z-30 ${
+          sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full'
+        }`}
       >
         {sidebarOpen && (
           <div className="h-full flex flex-col pt-25">
-            {/* Sidebar Header */}
-            <div className="px-6 py-4 border-b border-purple-100">
+            {/* Sidebar Header with Menu Button */}
+            <div className="px-6 py-4 border-b border-purple-100 flex items-center justify-between">
               <h2 className="text-xl font-bold text-purple-900">Admin Panel</h2>
+              {/* <button
+                onClick={toggleSidebar}
+                className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+              >
+                <Menu className="w-6 h-6 text-purple-700" />
+              </button> */}
             </div>
 
             {/* Menu Items */}
@@ -174,10 +181,11 @@ const AdminLayout = () => {
                       <li key={index}>
                         <button
                           onClick={() => handleRouteChange(item.route)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${location.pathname === item.route
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+                            location.pathname === item.route
                               ? 'bg-purple-100 text-purple-900'
                               : 'text-gray-700 hover:bg-purple-50 hover:text-purple-900'
-                            }`}
+                          }`}
                         >
                           <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
                           <span className="font-medium">{item.label}</span>
@@ -215,10 +223,11 @@ const AdminLayout = () => {
                             <li key={subIndex}>
                               <button
                                 onClick={() => handleRouteChange(subItem.route)}
-                                className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all duration-200 ${location.pathname === subItem.route
+                                className={`w-full text-left px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+                                  location.pathname === subItem.route
                                     ? 'bg-purple-100 text-purple-900 font-medium'
                                     : 'text-gray-600 hover:bg-purple-50 hover:text-purple-900'
-                                  }`}
+                                }`}
                               >
                                 {subItem.label}
                               </button>
@@ -246,25 +255,26 @@ const AdminLayout = () => {
         )}
       </div>
 
+      {/* Menu Toggle Button - Shows when sidebar is closed */}
+      {!sidebarOpen && (
+        <button
+          onClick={toggleSidebar}
+          className="fixed top-4 left-4 z-40 p-3 bg-white shadow-lg rounded-lg hover:bg-purple-50 transition-colors"
+        >
+          <Menu className="w-6 h-6 text-purple-700" />
+        </button>
+      )}
+
       {/* Main Content */}
       <div
-        className={`transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'
-          }`}
+        className={`transition-all duration-300 ease-in-out ${
+          sidebarOpen ? 'ml-64' : 'ml-0'
+        }`}
       >
         {/* Top Header */}
-        <header className="bg-white shadow-md sticky top-23 z-20">
+        <header className="bg-white shadow-md sticky top-0 z-20">
           <div className="px-6 py-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleSidebar}
-                className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
-              >
-                <Menu className="w-6 h-6 text-purple-700" />
-              </button>
-              <h1 className="text-2xl font-bold text-purple-900">
-                {getPageTitle()}
-              </h1>
-            </div>
+            {/* You can add header content here if needed */}
           </div>
         </header>
 

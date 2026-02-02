@@ -43,6 +43,7 @@ import "./App.css";
 import ContactForm from "./Pages/ContactForm";
 import StudentTestResultPage from "./Pages/student/StudentTestResultPage";
 import StudentTestPage from "./Pages/student/StudentTestPage";
+import ViewStudent from "./Pages/admin/ViewStudent";
 
 function App() {
   return (
@@ -99,7 +100,8 @@ function App() {
           <Route path="all-test" element={<AllTest />} />
           <Route path="add-videos" element={<AddVideos />} />
           <Route path="all-videos" element={<AllVideos />} />
-          <Route path="/admin/course/:courseId" element={<AdminCourseDetail />} />
+          <Route path="courses/:courseId" element={<AdminCourseDetail />} />
+          <Route path="students/:id" element={<ViewStudent />} />
 
 
         </Route>
