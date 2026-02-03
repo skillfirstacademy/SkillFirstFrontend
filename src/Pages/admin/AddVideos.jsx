@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { showSuccess, showError } from "../../Componnets/AppToaster";
 import adminApi from "../../api/adminApi";
 
 function AddVideos() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [videoFile, setVideoFile] = useState(null);
@@ -14,18 +15,22 @@ function AddVideos() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Fetch all courses on mount
+  // Fetch courses on mount
   useEffect(() => {
     fetchCourses();
-    
-    // Get courseId from URL query parameters
-    const params = new URLSearchParams(location.search);
-    const courseIdFromUrl = params.get('courseId');
-    
-    if (courseIdFromUrl) {
-      setSelectedCourse(courseIdFromUrl);
+  }, []);
+
+  // Auto-select course from URL when courses are loaded
+  useEffect(() => {
+    if (courses.length > 0) {
+      const params = new URLSearchParams(location.search);
+      const courseId = params.get("courseId");
+      
+      if (courseId) {
+        setSelectedCourse(courseId);
+      }
     }
-  }, [location.search]);
+  }, [courses, location.search]);
 
   const fetchCourses = async () => {
     try {
@@ -106,12 +111,12 @@ function AddVideos() {
       );
 
       showSuccess("Video uploaded successfully!");
-      
+
       // Reset form (but keep the selected course if it came from URL)
       setTitle("");
       setDescription("");
       setVideoFile(null);
-      setOrder(1);
+      setOrder(order + 1); // Auto-increment for next video
       setUploadProgress(0);
       document.getElementById("videoInput").value = "";
     } catch (err) {
@@ -122,9 +127,24 @@ function AddVideos() {
     }
   };
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={handleGoBack}
+          className="mb-4 text-purple-700 font-medium hover:text-purple-900 transition flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
           {/* Header */}
           <div className="mb-8">
@@ -199,7 +219,7 @@ function AddVideos() {
                 type="number"
                 min="1"
                 value={order}
-                onChange={(e) => setOrder(e.target.value)}
+                onChange={(e) => setOrder(parseInt(e.target.value))}
                 className="w-full px-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                 required
               />
@@ -249,7 +269,7 @@ function AddVideos() {
                   </span>
                 </label>
               </div>
-              
+
               {/* Show selected file info */}
               {videoFile && (
                 <div className="mt-3 p-3 bg-purple-50 rounded-lg">

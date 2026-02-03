@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { showSuccess, showError } from "../../Componnets/AppToaster";
 import adminApi from "../../api/adminApi";
 import VideoPlayer from "../../Componnets/VideoPlayer";
+import { useSearchParams } from "react-router-dom";
 
 function AllVideos() {
   const [courses, setCourses] = useState([]);
@@ -14,15 +15,30 @@ function AllVideos() {
   const [playingVideo, setPlayingVideo] = useState(null);
   const [selectedTest, setSelectedTest] = useState(null);
   const [testLoading, setTestLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const courseIdFromUrl = searchParams.get("courseId");
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
     order: 1,
+    videoFile: null,
   });
 
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  useEffect(() => {
+  if (!courseIdFromUrl || courses.length === 0) return;
+
+  const course = courses.find((c) => c._id === courseIdFromUrl);
+
+  if (course) {
+    setSelectedCourse(course);
+    setSelectedStage("all");
+    fetchVideos(course._id);
+  }
+}, [courseIdFromUrl, courses]);
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -39,7 +55,14 @@ function AllVideos() {
   };
 
   const fetchVideos = async (courseId, stage = "all") => {
+    if (!courseId) {
+      console.warn("fetchVideos called without courseId");
+      setVideos([]);
+      return;
+    }
+
     setVideosLoading(true);
+
     try {
       const url =
         stage === "all"
@@ -58,6 +81,7 @@ function AllVideos() {
       setVideosLoading(false);
     }
   };
+
 
   const fetchTest = async (videoId) => {
     setTestLoading(true);
@@ -115,19 +139,33 @@ function AllVideos() {
     console.log("Playing video:", video);
     setPlayingVideo(video);
   };
+  console.log("edi", editingVideo)
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      await adminApi.put(`/videos/${editingVideo._id}`, editForm);
-      showSuccess("Video updated successfully");
-      setEditingVideo(null);
-      fetchVideos(selectedCourse._id, selectedStage);
-    } catch (err) {
-      showError(err.response?.data?.message || "Failed to update video");
+    const videoId = editingVideo._id;
+    const courseId = editingVideo.courseId; // 🔥 IMPORTANT
+
+    const formData = new FormData();
+    formData.append("title", editForm.title);
+    formData.append("description", editForm.description);
+    formData.append("order", editForm.order);
+
+    if (editForm.videoFile) {
+      formData.append("video", editForm.videoFile);
     }
+
+    await adminApi.put(
+      `/videos/${videoId}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
+    setEditingVideo(null);
+    fetchVideos(courseId); // ✅ PASS IT
   };
+
 
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return "N/A";
@@ -168,19 +206,17 @@ function AllVideos() {
                     <button
                       key={course._id}
                       onClick={() => handleCourseClick(course)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition ${
-                        selectedCourse?._id === course._id
-                          ? "bg-purple-700 text-white"
-                          : "bg-purple-50 text-purple-700 hover:bg-purple-100"
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition ${selectedCourse?._id === course._id
+                        ? "bg-purple-700 text-white"
+                        : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                        }`}
                     >
                       <div className="font-medium truncate">{course.title}</div>
                       <div
-                        className={`text-sm ${
-                          selectedCourse?._id === course._id
-                            ? "text-purple-200"
-                            : "text-purple-500"
-                        }`}
+                        className={`text-sm ${selectedCourse?._id === course._id
+                          ? "text-purple-200"
+                          : "text-purple-500"
+                          }`}
                       >
                         {course.description?.substring(0, 30)}...
                       </div>
@@ -231,44 +267,13 @@ function AllVideos() {
                 <div className="bg-white rounded-xl shadow-md p-4">
                   <div className="flex flex-wrap gap-3">
                     <button
-                      onClick={() => handleStageFilter("all")}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        selectedStage === "all"
-                          ? "bg-purple-700 text-white"
-                          : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                      }`}
+                      // onClick={() => handleStageFilter("all")}
+                      className={`px-4 py-2 rounded-lg font-medium transition ${selectedStage === "all"
+                        ? "bg-purple-700 text-white"
+                        : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                        }`}
                     >
-                      All Stages
-                    </button>
-                    <button
-                      onClick={() => handleStageFilter("beginner")}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        selectedStage === "beginner"
-                          ? "bg-purple-700 text-white"
-                          : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                      }`}
-                    >
-                      Beginner
-                    </button>
-                    <button
-                      onClick={() => handleStageFilter("intermediate")}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        selectedStage === "intermediate"
-                          ? "bg-purple-700 text-white"
-                          : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                      }`}
-                    >
-                      Intermediate
-                    </button>
-                    <button
-                      onClick={() => handleStageFilter("advanced")}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        selectedStage === "advanced"
-                          ? "bg-purple-700 text-white"
-                          : "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                      }`}
-                    >
-                      Advanced
+                      {selectedCourse.level}
                     </button>
                   </div>
                 </div>
@@ -466,6 +471,20 @@ function AllVideos() {
             </h2>
 
             <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-800 mb-2">
+                  Update Video
+                </label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, videoFile: e.target.files[0] })
+                  }
+                  className="w-full"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-purple-800 mb-2">
                   Video Title

@@ -22,14 +22,14 @@ const AdminDashboard = () => {
       const [usersRes, coursesRes, enrollmentStatsRes] = await Promise.all([
         adminApi.get("/admin/users"),
         adminApi.get("/courses"),
-        adminApi.get("/admin/enrollments/stats"),
+        adminApi.get("/admin/enrollments"),
       ]);
 
-      console.log("courses", coursesRes)  
+      console.log("enrollments", enrollmentStatsRes.data.data);
 
       setUsers(usersRes.data);
       setCourses(coursesRes.data);
-      setStats(enrollmentStatsRes.data.stats);
+      setStats(enrollmentStatsRes.data.data);
 
     } catch (err) {
       console.log(err);
@@ -43,15 +43,35 @@ const AdminDashboard = () => {
     loadDashboardData();
   }, []);
 
-  // Calculate dynamic values
+  // Calculate dynamic values from enrollment data
   const totalStudents = users.filter((u) => u.role === "student").length;
   const totalAdmins = users.filter((u) => u.role === "admin").length;
   const totalSuperAdmins = users.filter((u) => u.role === "superadmin").length;
 
-  const totalCertificates = 0; // (Implement later when certificate model is ready)
-  const completionRate = stats
-    ? `${Math.min(100, Math.floor(stats.paidEnrollments / (stats.totalEnrollments || 1) * 100))}%`
-    : "0%";
+  // Calculate enrollment statistics
+  const enrollments = Array.isArray(stats) ? stats : [];
+  const totalEnrollments = enrollments.length;
+  const completedEnrollments = enrollments.filter(e => e.status === "completed").length;
+  const activeEnrollments = enrollments.filter(e => e.status === "active" || e.status === "enrolled").length;
+  const pendingEnrollments = totalEnrollments - completedEnrollments;
+
+  // Calculate revenue
+  const totalRevenue = enrollments.reduce((sum, enrollment) => {
+    if (enrollment.payment && enrollment.payment.status === "paid") {
+      return sum + (enrollment.payment.amount || 0);
+    }
+    return sum;
+  }, 0);
+
+  // Calculate certificates issued
+  const totalCertificates = enrollments.reduce((sum, enrollment) => {
+    return sum + (enrollment.progress?.certificatesEarned || 0);
+  }, 0);
+
+  // Calculate completion rate
+  const completionRate = totalEnrollments > 0
+    ? Math.round((completedEnrollments / totalEnrollments) * 100)
+    : 0;
 
   const statsCards = [
     {
@@ -67,7 +87,7 @@ const AdminDashboard = () => {
       id: "courses",
       icon: BookOpen,
       label: "Total Courses",
-      value: courses.count,
+      value: courses.count || 0,
       change: "+3",
       bgColor: "bg-blue-100",
       iconColor: "text-blue-700",
@@ -75,8 +95,8 @@ const AdminDashboard = () => {
     {
       id: "enrollments",
       icon: FileText,
-      label: "Active Enrollments",
-      value: stats?.totalEnrollments || 0,
+      label: "Total Enrollments",
+      value: totalEnrollments,
       change: "+8%",
       bgColor: "bg-amber-100",
       iconColor: "text-amber-700",
@@ -85,7 +105,7 @@ const AdminDashboard = () => {
       id: "revenue",
       icon: BarChart3,
       label: "Total Revenue",
-      value: `₹${stats?.totalRevenue || 0}`,
+      value: `₹${totalRevenue.toLocaleString('en-IN')}`,
       change: "+15%",
       bgColor: "bg-green-100",
       iconColor: "text-green-700",
@@ -112,12 +132,23 @@ const AdminDashboard = () => {
       id: "completion",
       icon: BarChart3,
       label: "Completion Rate",
-      value: completionRate,
+      value: `${completionRate}%`,
       change: "+6%",
       bgColor: "bg-teal-100",
       iconColor: "text-teal-700",
     },
   ];
+
+  // Additional stats for detailed view
+  const detailedStats = {
+    totalEnrollments,
+    completedEnrollments,
+    activeEnrollments,
+    pendingEnrollments,
+    totalRevenue,
+    completionRate,
+    totalCertificates,
+  };
 
   if (loading)
     return (
@@ -132,14 +163,21 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statsCards.map((card) => {
           const Icon = card.icon;
+          const isClickable = ["students", "courses", "enrollments"].includes(card.id);
+          
           return (
             <div
               key={card.id}
-              onClick={() => setActiveTab(card.id)}
-              className={`bg-white rounded-2xl shadow-lg p-6 border cursor-pointer transition-all duration-300 ${activeTab === card.id
+              onClick={isClickable ? () => setActiveTab(card.id) : undefined}
+              className={`bg-white rounded-2xl shadow-lg p-6 border transition-all duration-300 ${
+                isClickable ? "cursor-pointer" : "cursor-default"
+              } ${
+                activeTab === card.id && isClickable
                   ? "border-purple-500 shadow-xl ring-2 ring-purple-300"
-                  : "border-purple-100 hover:shadow-xl"
-                }`}
+                  : "border-purple-100"
+              } ${
+                isClickable ? "hover:shadow-xl" : ""
+              }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 ${card.bgColor} rounded-lg`}>
@@ -166,6 +204,7 @@ const AdminDashboard = () => {
         users={users}
         courses={courses}
         stats={stats}
+        detailedStats={detailedStats}
       />
     </>
   );

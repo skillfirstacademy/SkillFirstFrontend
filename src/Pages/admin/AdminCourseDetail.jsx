@@ -34,16 +34,28 @@ function AdminCourseDetail() {
   const fetchCourseOverview = async () => {
     try {
       setLoading(true);
-      const [courseRes, videosRes] = await Promise.all([
-        adminApi.get(`/courses/${courseId}`),
-        adminApi.get(`/videos/course/${courseId}`),
-      ]);
-
+      
+      // Fetch course details
+      const courseRes = await adminApi.get(`/courses/${courseId}`);
       setCourse(courseRes.data?.course || courseRes.data);
-      setVideos(videosRes.data || []);
 
-      if (videosRes.data?.length) fetchTestsForVideos(videosRes.data);
-    } catch {
+      // Fetch videos - handle 404 gracefully
+      try {
+        const videosRes = await adminApi.get(`/videos/course/${courseId}`);
+        const videosList = videosRes.data || [];
+        setVideos(videosList);
+
+        if (videosList.length > 0) {
+          fetchTestsForVideos(videosList);
+        }
+      } catch (videoError) {
+        // If videos endpoint returns 404 or any error, just set empty array
+        console.log("No videos found for this course");
+        setVideos([]);
+      }
+
+    } catch (error) {
+      console.error("Error fetching course:", error);
       showError("Failed to load course");
     } finally {
       setLoading(false);
@@ -119,10 +131,10 @@ function AdminCourseDetail() {
 
         {/* BACK */}
         <button
-          onClick={() => navigate("/admin/courses")}
+          onClick={() => navigate(-1)}
           className="text-purple-700 font-medium"
         >
-          ← Back to Courses
+          ← Back 
         </button>
 
         {/* COURSE HEADER */}
@@ -178,7 +190,8 @@ function AdminCourseDetail() {
           testsMap={testsMap}
           onPlay={setPlayingVideo}
           onViewTest={setViewingTest}
-          onEdit={(id) => navigate(`/admin/videos/edit/${id}`)}
+          onEdit={(id) => navigate(`/admin/all-videos?courseId=${course._id}`)}
+          addvid={() => navigate(`/admin/add-videos?courseId=${course._id}`)}
           onDelete={handleDeleteVideo}
           onCreateTest={(id) => navigate(`/admin/tests/create/${id}`)}
         />
@@ -360,6 +373,7 @@ const Section = ({
   onPlay,
   onViewTest,
   onEdit,
+  addvid,
   onDelete,
   onCreateTest,
 }) => (
@@ -368,46 +382,75 @@ const Section = ({
       {title} ({videos.length})
     </h2>
 
-    {videos.map((video, idx) => {
-      const test = testsMap[video._id];
-      return (
-        <div
-          key={video._id}
-          className="border rounded-xl p-4 flex justify-between mb-4"
+    {videos.length === 0 ? (
+      <div className="text-center py-12">
+        <div className="text-gray-400 mb-4">
+          <svg
+            className="mx-auto h-16 w-16"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+          No Videos Yet
+        </h3>
+        <p className="text-gray-500 mb-6">
+          Videos are coming soon for this course
+        </p>
+        <button
+          onClick={addvid}
+          className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
-          <div>
-            <p className="font-semibold">
-              {idx + 1}. {video.title}
-            </p>
+          Add First Video
+        </button>
+      </div>
+    ) : (
+      videos.map((video, idx) => {
+        const test = testsMap[video._id];
+        return (
+          <div
+            key={video._id}
+            className="border rounded-xl p-4 flex justify-between mb-4"
+          >
+            <div>
+              <p className="font-semibold">
+                {idx + 1}. {video.title}
+              </p>
 
-            <div className="flex gap-4 mt-2 text-sm">
-              <button onClick={() => onPlay(video)} className="text-purple-600">
-                ▶ Play
+              <div className="flex gap-4 mt-2 text-sm">
+                <button onClick={() => onPlay(video)} className="text-purple-600">
+                  ▶ Play
+                </button>
+
+                {test ? (
+                  <button onClick={() => onViewTest(test)} className="text-blue-600">
+                    View Test
+                  </button>
+                ) : (
+                  <button onClick={() => onCreateTest(video._id)} className="text-green-600">
+                    + Create Test
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => onEdit(video._id)} className="bg-yellow-500 px-3 text-white rounded">
+                Edit
               </button>
-
-              {test ? (
-                <button onClick={() => onViewTest(test)} className="text-blue-600">
-                  View Test
-                </button>
-              ) : (
-                <button onClick={() => onCreateTest(video._id)} className="text-green-600">
-                  + Create Test
-                </button>
-              )}
             </div>
           </div>
-
-          <div className="flex gap-2">
-            <button onClick={() => onEdit(video._id)} className="bg-yellow-500 px-3 py-1 text-white rounded">
-              Edit
-            </button>
-            <button onClick={() => onDelete(video._id)} className="bg-red-600 px-3 py-1 text-white rounded">
-              Delete
-            </button>
-          </div>
-        </div>
-      );
-    })}
+        );
+      })
+    )}
   </div>
 );
 

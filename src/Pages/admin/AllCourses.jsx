@@ -38,7 +38,7 @@ function AllCourses() {
   };
 
   const handleOpenCourseDetail = (courseId) => {
-    navigate(`/admin/course/${courseId}`);
+    navigate(`/admin/courses/${courseId}`);
   };
 
   const handleEditClick = (course, e) => {

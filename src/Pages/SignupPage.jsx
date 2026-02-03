@@ -25,7 +25,7 @@ function SignupPage() {
 
   // ✅ Google signup (same as login)
   const handleGoogleSignUp = () => {
-    window.location.href = "http://localhost:5000/users/api/google";
+    window.location.href = "http://localhost:5000/api/users/google";
   };
 
   // ✅ Signup submit
