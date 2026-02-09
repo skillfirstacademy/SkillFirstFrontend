@@ -1,9 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const storedUser = JSON.parse(localStorage.getItem("user"));
+
 const initialState = {
-  user: JSON.parse(localStorage.getItem("user")) || null,
+  user: storedUser || null,
   accessToken: localStorage.getItem("accessToken") || null,
   isAuthenticated: !!localStorage.getItem("accessToken"),
+  isBlocked: storedUser?.isBlocked || false,
+  isBlockedAll: storedUser?.isBlockedAll || false,
 };
 
 const authSlice = createSlice({
@@ -11,11 +15,16 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     loginSuccess: (state, action) => {
-      state.user = action.payload.user;
+      const user = action.payload.user;
+
+      state.user = user;
       state.accessToken = action.payload.accessToken;
       state.isAuthenticated = true;
 
-      localStorage.setItem("user", JSON.stringify(action.payload.user));
+      state.isBlocked = user?.isBlocked || false;
+      state.isBlockedAll = user?.isBlockedAll || false;
+
+      localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("accessToken", action.payload.accessToken);
     },
 
@@ -23,9 +32,10 @@ const authSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       state.isAuthenticated = false;
+      state.isBlocked = false;
+      state.isBlockedAll = false;
 
-      localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
+      localStorage.clear();
     },
   },
 });

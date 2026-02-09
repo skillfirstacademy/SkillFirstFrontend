@@ -9,6 +9,8 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
+import logo from "../assets/Skill-Firest_logo_WHITE_01.png"
+import { Link } from "react-router-dom";
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -48,10 +50,13 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Company Info */}
-          <div className="lg:col-span-1">
-            <h3 className="text-white text-2xl md:text-3xl font-bold mb-4">
-              SkillFirst
-            </h3>
+          <div className="mb-4">
+            <Link
+              to="/"
+              // className="w-[10%]"
+            >
+              <img src={logo} alt="" className="w-full h-13" />
+            </Link>
             <p className="text-purple-300 mb-6 leading-relaxed">
               Empowering learners worldwide with expert-led courses and
               AI-powered learning experiences.

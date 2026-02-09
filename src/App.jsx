@@ -1,6 +1,6 @@
 import Navbar from "./Componnets/Navbar";
 import Footer from "./Componnets/Footer";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 import HomePage from "./Pages/HomePage";
 import AboutPage from "./Pages/AboutPage";
@@ -44,75 +44,221 @@ import ContactForm from "./Pages/ContactForm";
 import StudentTestResultPage from "./Pages/student/StudentTestResultPage";
 import StudentTestPage from "./Pages/student/StudentTestPage";
 import ViewStudent from "./Pages/admin/ViewStudent";
+import BlockedPage from "./Componnets/BlockedPage";
+import OutOfServicePage from "./Componnets/OutOfServicePage";
+import BlockGuard from "./Componnets/BlockGuard";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { loginSuccess } from "./Features/authSlice";
+import api from "./api/axios";
+
+// function App() {
+//   return (
+//     <>
+//       <Navbar />
+//       <AppToaster />
+
+//       <Routes>
+//         {/* PUBLIC ROUTES */}
+//         <Route path="/" element={<HomePage />} />
+//         <Route path="/about" element={<AboutPage />} />
+//         <Route path="/courses" element={<CoursePage />} />
+//         <Route path="/login" element={<LoginPage />} />
+//         <Route path="/signup" element={<SignupPage />} />
+//         <Route path="/contact" element={<ContactForm />} />
+//         <Route path="/forgot-password" element={<ForgotPassword />} />
+//         <Route path="/google-success" element={<GoogleSuccess />} />
+
+//         <Route path="/course/:courseId" element={<CourseDetailsPage />} />
+//         <Route path="/coursecontent/:coursecontentId" element={<CourseContentPage />} />
+
+//         <Route path="/english" element={<English />} />
+//         <Route path="/graphicdesgine" element={<GraphicDesgine />} />
+//         <Route path="/videoediting" element={<VideoEditing />} />
+//         <Route path="/uiux" element={<UiUx />} />
+
+//         {/* STUDENT ONLY */}
+//         <Route
+//           path="/student"
+//           element={
+//             <StudentRoute>
+//               <Dashboard />
+//             </StudentRoute>
+//           }
+//         >
+//           <Route path="dashboard" element={<Dashboard />} />
+//         </Route>
+//           <Route path="student/test/:videoId" element={<StudentTestPage />} />
+//           <Route path="student/test-result/:testId" element={<StudentTestResultPage />} />
+
+
+//         {/* ADMIN ROUTES - All nested under AdminLayout */}
+//         <Route path="/admin" element={<AdminRoute> <AdminLayout /> </AdminRoute>}>
+
+//           <Route path="dashboard" element={<AdminDashboard />} />
+//           <Route path="add-courses" element={<AddCourses />} />
+//           <Route path="all-courses" element={<AllCourses />} />
+//           <Route path="add-students" element={<AddStudents />} />
+//           <Route path="all-students" element={<AllStudents />} />
+//           <Route path="enroll-students" element={<EnrollStudents />} />
+//           <Route path="all-users" element={<AllUsers />} />
+//           <Route path="make-admin" element={<MakeAdmin />} />
+//           <Route path="add-test" element={<AddTest />} />
+//           <Route path="all-test" element={<AllTest />} />
+//           <Route path="add-videos" element={<AddVideos />} />
+//           <Route path="all-videos" element={<AllVideos />} />
+//           <Route path="courses/:courseId" element={<AdminCourseDetail />} />
+//           <Route path="students/:id" element={<ViewStudent />} />
+
+
+//         </Route>
+
+//         {/* 404 */}
+//         <Route path="*" element={<NotFound />} />
+//       </Routes>
+
+//       <Footer />
+//     </>
+//   );
+// }
+
+// export default App;
+
 
 function App() {
+  const location = useLocation();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const token = localStorage.getItem("accessToken");
+
+    if (user && token) {
+      dispatch(loginSuccess({ user, accessToken: token }));
+    }
+  }, []);
+ 
+useEffect(() => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return;
+
+  const interval = setInterval(async () => {
+    try {
+      const res = await api.get("/me");
+
+      const userData = res?.data?.user || res?.data;
+
+      if (!userData) return;
+
+      const storedUser = localStorage.getItem("user");
+
+      // Update LS only if changed
+      if (storedUser !== JSON.stringify(userData)) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        console.log("User updated in localStorage");
+      }
+
+    } catch (err) {
+      console.log("User refresh failed", err);
+    }
+  }, 10000); // testing interval
+
+  return () => clearInterval(interval);
+}, []);
+
+
+
+  // Hide footer on admin routes
+  const hideFooter = location.pathname.startsWith("/admin");
+
   return (
     <>
       <Navbar />
       <AppToaster />
 
       <Routes>
-        {/* PUBLIC ROUTES */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/courses" element={<CoursePage />} />
+
+        {/* ===== AUTH ONLY ROUTES ===== */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/contact" element={<ContactForm />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/google-success" element={<GoogleSuccess />} />
 
-        <Route path="/course/:courseId" element={<CourseDetailsPage />} />
-        <Route path="/coursecontent/:coursecontentId" element={<CourseContentPage />} />
+        {/* ===== BLOCK SCREENS ===== */}
+        <Route path="/blocked" element={<BlockedPage />} />
+        <Route path="/out-of-service" element={<OutOfServicePage />} />
 
-        <Route path="/english" element={<English />} />
-        <Route path="/graphicdesgine" element={<GraphicDesgine />} />
-        <Route path="/videoediting" element={<VideoEditing />} />
-        <Route path="/uiux" element={<UiUx />} />
+        {/* ===== ALL OTHER ROUTES PROTECTED ===== */}
+        <Route element={<BlockGuard />}>
 
-        {/* STUDENT ONLY */}
-        <Route
-          path="/student"
-          element={
-            <StudentRoute>
-              <Dashboard />
-            </StudentRoute>
-          }
-        >
-          <Route path="dashboard" element={<Dashboard />} />
-        </Route>
-          <Route path="student/test/:videoId" element={<StudentTestPage />} />
-          <Route path="student/test-result/:testId" element={<StudentTestResultPage />} />
+          {/* PUBLIC CONTENT BUT BLOCKABLE */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/courses" element={<CoursePage />} />
+          <Route path="/contact" element={<ContactForm />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/google-success" element={<GoogleSuccess />} />
 
+          <Route path="/course/:courseId" element={<CourseDetailsPage />} />
+          <Route
+            path="/coursecontent/:coursecontentId"
+            element={<CourseContentPage />}
+          />
 
-        {/* ADMIN ROUTES - All nested under AdminLayout */}
-        <Route path="/admin" element={<AdminRoute> <AdminLayout /> </AdminRoute>}>
+          <Route path="/english" element={<English />} />
+          <Route path="/graphicdesgine" element={<GraphicDesgine />} />
+          <Route path="/videoediting" element={<VideoEditing />} />
+          <Route path="/uiux" element={<UiUx />} />
 
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="add-courses" element={<AddCourses />} />
-          <Route path="all-courses" element={<AllCourses />} />
-          <Route path="add-students" element={<AddStudents />} />
-          <Route path="all-students" element={<AllStudents />} />
-          <Route path="enroll-students" element={<EnrollStudents />} />
-          <Route path="all-users" element={<AllUsers />} />
-          <Route path="make-admin" element={<MakeAdmin />} />
-          <Route path="add-test" element={<AddTest />} />
-          <Route path="all-test" element={<AllTest />} />
-          <Route path="add-videos" element={<AddVideos />} />
-          <Route path="all-videos" element={<AllVideos />} />
-          <Route path="courses/:courseId" element={<AdminCourseDetail />} />
-          <Route path="students/:id" element={<ViewStudent />} />
+          {/* STUDENT ROUTES */}
+          <Route
+            path="/student"
+            element={
+              <StudentRoute>
+                <Dashboard />
+              </StudentRoute>
+            }
+          >
+            <Route path="dashboard" element={<Dashboard />} />
+          </Route>
 
+          <Route path="/student/test/:videoId" element={<StudentTestPage />} />
+          <Route path="/student/test-result/:testId" element={<StudentTestResultPage />} />
+
+          {/* ADMIN ROUTES */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="add-courses" element={<AddCourses />} />
+            <Route path="all-courses" element={<AllCourses />} />
+            <Route path="add-students" element={<AddStudents />} />
+            <Route path="all-students" element={<AllStudents />} />
+            <Route path="enroll-students" element={<EnrollStudents />} />
+            <Route path="all-users" element={<AllUsers />} />
+            <Route path="make-admin" element={<MakeAdmin />} />
+            <Route path="add-test" element={<AddTest />} />
+            <Route path="all-test" element={<AllTest />} />
+            <Route path="add-videos" element={<AddVideos />} />
+            <Route path="all-videos" element={<AllVideos />} />
+            <Route path="courses/:courseId" element={<AdminCourseDetail />} />
+            <Route path="students/:id" element={<ViewStudent />} />
+          </Route>
 
         </Route>
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
+
       </Routes>
 
-      <Footer />
+      {!hideFooter && <Footer />}
     </>
   );
 }
 
-export default App;
+
+export default App; 

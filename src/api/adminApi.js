@@ -2,7 +2,7 @@ import axios from "axios";
 import { showError } from "../Componnets/AppToaster";
 
 const adminApi = axios.create({
-  baseURL: "http://localhost:5000/api/",
+  baseURL: "https://skillfirstbackend.onrender.com/api/",
 });
 
 let isRefreshing = false;
@@ -35,6 +35,21 @@ adminApi.interceptors.response.use(
     const originalRequest = error.config;
     const code = error.response?.data?.code;
     const status = error.response?.status;
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    
+
+    if (user?.isBlockedAll) {
+      // localStorage.clear();
+      window.location.href = "/out-of-service";
+      return;
+    }
+
+    if (user?.isBlocked) {
+      // localStorage.clear();
+      window.location.href = "/blocked";
+      return;
+    }
 
     if (
       status === 401 &&

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import profileImg from "../assets/icons8-account-100.png";
+import logo from "../assets/Skill-Firest_logo_WHITE_01.png"
 
 function Navbar() {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -22,9 +23,9 @@ function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            className="text-xl md:text-2xl font-bold text-white"
+            className="w-[15%]"
           >
-            SkillFirst
+            <img src={logo} alt=""  className="w-full h-13"/>
           </Link>
 
           {/* Desktop Menu */}
