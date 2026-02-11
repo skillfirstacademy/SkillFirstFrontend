@@ -20,7 +20,7 @@ function LoginPage() {
   const [showConflictModal, setShowConflictModal] = useState(false);
 
   const handleGoogleSignIn = () => {
-    window.location.href = "http://localhost:5000/api/users/google";
+    window.location.href = "https://skillfirstbackend.onrender.com/api/users/google";
   };
 
   const getDeviceId = () => {

@@ -4,6 +4,9 @@ import { showError } from "../Componnets/AppToaster";
 const adminApi = axios.create({
   baseURL: "https://skillfirstbackend.onrender.com/api/",
 });
+// const adminApi = axios.create({
+//   baseURL: "http://localhost:5000/api/",
+// });
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -72,7 +75,7 @@ adminApi.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:5000/api/users/refresh-token",
+          "https://skillfirstbackend.onrender.com/api/users/refresh-token",
           { refreshToken }
         );
 

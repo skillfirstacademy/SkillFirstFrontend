@@ -4,6 +4,9 @@ import { showError } from "../Componnets/AppToaster";
 const api = axios.create({
   baseURL: "https://skillfirstbackend.onrender.com/api/users",
 });
+// const api = axios.create({
+//   baseURL: "http://localhost:5000/api/users",
+// });
 
 let logoutTimeout = null;
 let isRefreshing = false;
@@ -148,12 +151,10 @@ api.interceptors.response.use(
         }
 
         try {
-          console.log("🔄 Attempting to refresh access token...");
-          console.log("🔄 Calling: http://localhost:5000/api/users/refresh-token");
 
           // Use base axios instance without interceptors for refresh
           const response = await axios.post(
-            "http://localhost:5000/api/users/refresh-token",
+            "https://skillfirstbackend.onrender.com/api/users/refresh-token",
             { refreshToken },
             {
               headers: {

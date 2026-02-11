@@ -134,7 +134,7 @@ function AllStudents() {
     (student) =>
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.phone?.includes(searchTerm),
+      student.mobile?.includes(searchTerm),
   );
 
   // Get selected course details
@@ -277,7 +277,7 @@ function AllStudents() {
                         {student.email || "N/A"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-700">
-                        {student.phone || "N/A"}
+                        {student.mobile || "N/A"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {formatDate(student.createdAt)}
@@ -434,7 +434,7 @@ function AllStudents() {
                       Phone Number
                     </label>
                     <p className="text-gray-700 bg-gray-50 px-4 py-2 rounded-lg">
-                      {viewingStudent.phone || "N/A"}
+                      {viewingStudent.mobile || "N/A"}
                     </p>
                   </div>
 
@@ -461,7 +461,7 @@ function AllStudents() {
                       Student ID
                     </label>
                     <p className="text-gray-700 bg-gray-50 px-4 py-2 rounded-lg font-mono text-sm">
-                      {viewingStudent._id}
+                      {viewingStudent.studentId}
                     </p>
                   </div>
                 </div>

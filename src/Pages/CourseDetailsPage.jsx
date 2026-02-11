@@ -975,7 +975,7 @@ function CourseDetailsPage() {
       {/* VIDEO PLAYER MODAL */}
       {playingVideo && (
         <StudentVideoplayer
-          videoUrl={`http://localhost:5000/api/videos/${playingVideo._id}/stream`}
+          videoUrl={`https://skillfirstbackend.onrender.com/api/videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
           videoId={playingVideo._id}
           courseId={courseId}

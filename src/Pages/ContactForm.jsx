@@ -10,6 +10,7 @@ const ContactForm = () => {
     email: "",
     courseName: "",
     level: "beginner",
+    message:"",
   });
 
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ const ContactForm = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      const res = await adminApi.post("/contact/", formData);
+      const res = await adminApi.post("/contact", formData);
       setMessage({ type: "success", text: res.data.message });
       setFormData({
         name: "",
@@ -33,6 +34,7 @@ const ContactForm = () => {
         email: "",
         courseName: "",
         level: "beginner",
+        message:"",
       });
     } catch (err) {
       setMessage({
@@ -151,6 +153,21 @@ const ContactForm = () => {
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Message <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none"
+              placeholder="Web Design / UI UX / Video Editing"
+            />
           </div>
 
           {/* Button */}

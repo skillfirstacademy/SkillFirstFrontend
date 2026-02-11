@@ -337,7 +337,7 @@ function AdminCourseDetail() {
       {/* VIDEO PLAYER */}
       {playingVideo && (
         <VideoPlayer
-          videoUrl={`http://localhost:5000/api/videos/${playingVideo._id}/stream`}
+          videoUrl={`https://skillfirstbackend.onrender.com/api/videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
           onClose={() => setPlayingVideo(null)}
         />
