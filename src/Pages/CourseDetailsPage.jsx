@@ -563,7 +563,7 @@ function CourseDetailsPage() {
             <div className="flex justify-center">
               {course.thumbnail ? (
                 <img
-                  src={`http://localhost:5000${course.thumbnail}`}
+                  src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
                   alt={course.title}
                   className="rounded-2xl shadow-2xl max-w-full h-auto object-cover"
                 />

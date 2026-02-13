@@ -86,7 +86,7 @@ function AdminCourseDetail() {
 
     setThumbnailPreview(
       course.thumbnail
-        ? `http://localhost:5000${course.thumbnail}`
+        ? `https://skillfirstbackend.onrender.com${course.thumbnail}`
         : ""
     );
 
@@ -158,7 +158,7 @@ function AdminCourseDetail() {
           <div className="flex gap-6">
             {course.thumbnail && (
               <img
-                src={`http://localhost:5000${course.thumbnail}`}
+                src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
                 alt={course.title}
                 className="w-36 h-36 rounded-xl object-cover border"
               />

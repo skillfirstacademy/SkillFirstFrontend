@@ -150,7 +150,7 @@ function AllCourses() {
                 {/* Thumbnail */}
                 {course.thumbnail ? (
                   <img
-                    src={`http://localhost:5000${course.thumbnail}`}
+                    src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
                     alt={course.title}
                     className="w-full h-40 object-cover rounded-lg mb-4 shadow-md"
                   />
