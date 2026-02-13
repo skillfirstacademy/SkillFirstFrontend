@@ -51,13 +51,7 @@ function SignupPage() {
         dob,
         password,
         deviceId,
-      });
-
-      /**
-       * IMPORTANT:
-       * If backend returns user + token → auto-login
-       * If backend returns only message → redirect to login
-       */
+      });   
 
       if (res.data.user && res.data.accessToken) {
         dispatch(

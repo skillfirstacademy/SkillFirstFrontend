@@ -9,31 +9,16 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
-import logo from "../assets/Skill-Firest_logo_WHITE_01.png"
+import logo from "../assets/Skill-Firest_logo_WHITE_01.png";
 import { Link } from "react-router-dom";
 
 function Footer() {
   const currentYear = new Date().getFullYear();
 
-  const courses = [
-    { name: "Graphic Design", href: "/courses/graphic-design" },
-    { name: "Web Development", href: "/courses/web-development" },
-    { name: "English Communication", href: "/courses/english" },
-    { name: "UI/UX Design", href: "/courses/ui-ux" },
-  ];
-
   const quickLinks = [
     { name: "About Us", href: "/about" },
     { name: "All Courses", href: "/courses" },
     { name: "Contact", href: "/contact" },
-    // { name: "Blog", href: "/blog" },
-  ];
-
-  const legal = [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Refund Policy", href: "/refund" },
-    { name: "Cookie Policy", href: "/cookies" },
   ];
 
   const socialLinks = [
@@ -46,23 +31,23 @@ function Footer() {
 
   return (
     <footer className="bg-gradient-to-br from-purple-950 via-purple-900 to-purple-950 text-purple-200">
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Company Info */}
-          <div className="mb-4">
-            <Link
-              to="/"
-              // className="w-[10%]"
-            >
-              <img src={logo} alt="" className="w-full h-13" />
+      
+      {/* Main Footer */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          
+          {/* Logo & Description */}
+          <div>
+            <Link to="/">
+              <img src={logo} alt="SkillFirst Logo" className="h-12 mb-4" />
             </Link>
-            <p className="text-purple-300 mb-6 leading-relaxed">
+
+            <p className="text-purple-300 text-sm leading-relaxed mb-6">
               Empowering learners worldwide with expert-led courses and
               AI-powered learning experiences.
             </p>
 
-            {/* Social Links */}
+            {/* Social Icons */}
             <div className="flex gap-3">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
@@ -72,51 +57,28 @@ function Footer() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 bg-purple-800/50 hover:bg-purple-700 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                    className="w-9 h-9 bg-purple-800/50 hover:bg-purple-700 rounded-md flex items-center justify-center transition-all duration-300 hover:scale-110"
                     aria-label={social.label}
                   >
-                    <Icon className="w-5 h-5 text-purple-200" />
+                    <Icon className="w-4 h-4 text-purple-200" />
                   </a>
                 );
               })}
             </div>
           </div>
 
-          {/* Popular Courses */}
-          <div>
-            <h4 className="text-white text-lg font-semibold mb-4">
-              Popular Courses
-            </h4>
-            <ul className="space-y-3">
-              {courses.map((course) => (
-                <li key={course.name}>
-                  <a
-                    href={course.href}
-                    className="text-purple-300 hover:text-white transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-600 mr-2 group-hover:bg-purple-400 transition-colors"></span>
-                    {course.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Quick Links */}
           <div>
-            <h4 className="text-white text-lg font-semibold mb-4">
-              Quick Links
-            </h4>
-            <ul className="space-y-3">
+            <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+            <ul className="space-y-3 text-sm">
               {quickLinks.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-purple-300 hover:text-white transition-colors duration-200 flex items-center group"
+                  <Link
+                    to={link.href}
+                    className="hover:text-white transition-colors duration-200"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-600 mr-2 group-hover:bg-purple-400 transition-colors"></span>
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -124,68 +86,45 @@ function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h4 className="text-white text-lg font-semibold mb-4">
-              Get In Touch
-            </h4>
-            <ul className="space-y-4">
+            <h4 className="text-white font-semibold mb-4">Get In Touch</h4>
+            <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-purple-400 mb-1">Email</p>
-                  <a
-                    href="mailto:info@skillfirst.com"
-                    className="text-purple-300 hover:text-white transition-colors"
-                  >
-                    info@skillfirst.com
-                  </a>
-                </div>
+                <Mail className="w-4 h-4 text-purple-400 mt-1" />
+                <a
+                  href="mailto:info@skillfirst.com"
+                  className="hover:text-white transition-colors"
+                >
+                  info@skillfirst.com
+                </a>
               </li>
+
               <li className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-purple-400 mb-1">Phone</p>
-                  <a
-                    href="tel:+1234567890"
-                    className="text-purple-300 hover:text-white transition-colors"
-                  >
-                    +1 (234) 567-890
-                  </a>
-                </div>
+                <Phone className="w-4 h-4 text-purple-400 mt-1" />
+                <a
+                  href="tel:+1234567890"
+                  className="hover:text-white transition-colors"
+                >
+                  +1 (234) 567-890
+                </a>
               </li>
+
               <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-purple-400 mb-1">Location</p>
-                  <p className="text-purple-300">Ahmedabad, Gujarat, India</p>
-                </div>
+                <MapPin className="w-4 h-4 text-purple-400 mt-1" />
+                <span>Ahmedabad, Gujarat, India</span>
               </li>
             </ul>
           </div>
+
         </div>
       </div>
 
-      {/* Bottom Footer */}
+      {/* Bottom Bar */}
       <div className="border-t border-purple-800/50">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-purple-300 text-sm text-center md:text-left">
-              © {currentYear} SkillFirst. All rights reserved.
-              India
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 text-sm">
-              {legal.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-purple-300 hover:text-white transition-colors duration-200"
-                >
-                  {link.name}
-                </a>
-              ))}
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-6 text-center text-sm">
+          © {currentYear} SkillFirst. All rights reserved.
         </div>
       </div>
+
     </footer>
   );
 }

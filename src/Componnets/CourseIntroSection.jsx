@@ -127,7 +127,8 @@ function CourseIntroSection() {
               <div className="relative h-48">
                 {course.thumbnail ? (
                   <img
-                    src={`http://localhost:5000${course.thumbnail}`}
+                    // src={`http://localhost:5000${course.thumbnail}`}
+                    src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
                     alt={course.title}
                     className="w-full h-full object-cover"
                   />
