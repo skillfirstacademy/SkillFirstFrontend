@@ -799,14 +799,15 @@ function CourseDetailsPage() {
                           </div>
                         )}
                         {/* Unlock Timer */}
-                        {timeUntilUnlock && (
+                        {/* {timeUntilUnlock && (
                           <div className="mt-2 inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-semibold">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Unlocks in {timeUntilUnlock.hours}h {timeUntilUnlock.minutes}m
+                            {console.log("time", timeUntilUnlock)}
                           </div>
-                        )}
+                        )} */}
                       </div>
 
                       {/* Expand Icon */}
@@ -894,7 +895,7 @@ function CourseDetailsPage() {
                                 </p>
                                 {timeUntilUnlock && (
                                   <p className="text-sm text-amber-600">
-                                    Next unlock in approximately {timeUntilUnlock.hours}h {timeUntilUnlock.minutes}m
+                                    {/* Next unlock in approximately {timeUntilUnlock.hours}h {timeUntilUnlock.minutes}m */}
                                   </p>
                                 )}
                                 <p className="text-xs text-amber-600 mt-2">
@@ -959,7 +960,7 @@ function CourseDetailsPage() {
       {/* VIDEO PLAYER MODAL */}
       {playingVideo && (
         <StudentVideoplayer
-          videoUrl={`${adminApi}videos/${playingVideo._id}/stream`}
+          videoUrl={`http://video-api.skillfirstacademy.com/api/videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
           videoId={playingVideo._id}
           courseId={courseId}

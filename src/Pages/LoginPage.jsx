@@ -68,7 +68,7 @@ function LoginPage() {
         const role = res.data.user.role;
         
         if (role === "student") {
-          navigate("/student/dashboard");
+          navigate("/");
         } else if (role === "admin" || role === "superadmin") {
           navigate("/admin/dashboard");
         } else {

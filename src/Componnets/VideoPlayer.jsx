@@ -192,6 +192,7 @@ const VideoPlayer = ({ videoUrl, onClose, onError, title }) => {
               onContextMenu={handleContextMenu}
               onError={handleVideoError}
               onLoadedData={() => {
+                console.log("Video loaded successfully");
                 setIsLoading(false);
               }}
             >
