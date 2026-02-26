@@ -99,9 +99,6 @@ function StudentTestPage() {
                     <p className="text-gray-600">
                         Progress: {answeredCount} / {totalQuestions} questions answered
                     </p>
-                    <div className="mt-2 text-sm text-gray-500">
-                        Debug: {JSON.stringify(answers)}
-                    </div>
                 </div>
 
                 {test.questions.map((q, qIndex) => (
