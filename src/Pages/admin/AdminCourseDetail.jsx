@@ -50,7 +50,6 @@ function AdminCourseDetail() {
         }
       } catch (videoError) {
         // If videos endpoint returns 404 or any error, just set empty array
-        console.log("No videos found for this course");
         setVideos([]);
       }
 
@@ -86,7 +85,7 @@ function AdminCourseDetail() {
 
     setThumbnailPreview(
       course.thumbnail
-        ? `https://skillfirstbackend.onrender.com${course.thumbnail}`
+        ? `http://video-api.skillfirstacademy.com${course.thumbnail}`
         : ""
     );
 
@@ -158,7 +157,7 @@ function AdminCourseDetail() {
           <div className="flex gap-6">
             {course.thumbnail && (
               <img
-                src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
+                src={`http://video-api.skillfirstacademy.com${course.thumbnail}`}
                 alt={course.title}
                 className="w-36 h-36 rounded-xl object-cover border"
               />
@@ -337,7 +336,7 @@ function AdminCourseDetail() {
       {/* VIDEO PLAYER */}
       {playingVideo && (
         <VideoPlayer
-          videoUrl={`https://skillfirstbackend.onrender.com/api/videos/${playingVideo._id}/stream`}
+          videoUrl={`http://video-api.skillfirstacademy.com/api/videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
           onClose={() => setPlayingVideo(null)}
         />

@@ -19,7 +19,6 @@ function StudentTestPage() {
     const fetchTest = async () => {
         try {
             const res = await adminApi.get(`/tests/video/${videoId}`);
-            console.log("Test loaded:", res.data);
             setTest(res.data);
         } catch (err) {
             showError("Failed to load test");
@@ -30,13 +29,11 @@ function StudentTestPage() {
     };
 
     const selectAnswer = (qIndex, optionIndex) => {
-        console.log("Selected:", { qIndex, optionIndex });
         setAnswers((prev) => {
             const updated = {
                 ...prev,
                 [qIndex]: optionIndex,
             };
-            console.log("Updated answers state:", updated);
             return updated;
         });
     };
@@ -59,16 +56,9 @@ function StudentTestPage() {
                 (_, idx) => answers[idx] ?? null
             );
 
-            // console.log("Answers state before submit:", answers);
-            // console.log("Formatted answers:", formattedAnswers);
-            console.log("Payload:", { answers: formattedAnswers });
-
             const res = await adminApi.post(`/test-attempt/${test._id}`, {
                 answers: formattedAnswers,
             });
-
-            // console.log("Backend response:", res.data);
-
             showSuccess("Test submitted successfully");
 
             navigate(`/student/test-result/${test._id}`, {

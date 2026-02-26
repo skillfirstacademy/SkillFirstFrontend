@@ -14,9 +14,6 @@ const VideoPlayer = ({ videoUrl, onClose, onError, title }) => {
       try {
         setIsLoading(true);
         setError(null);
-
-        console.log("Loading video from:", videoUrl);
-
         // Get token from localStorage
         const token = localStorage.getItem("accessToken");
         
@@ -38,8 +35,6 @@ const VideoPlayer = ({ videoUrl, onClose, onError, title }) => {
 
         // Get video as blob
         const blob = await response.blob();
-        console.log("Video blob loaded:", blob.size, "bytes");
-
         // Create object URL
         objectUrl = URL.createObjectURL(blob);
         
@@ -197,7 +192,6 @@ const VideoPlayer = ({ videoUrl, onClose, onError, title }) => {
               onContextMenu={handleContextMenu}
               onError={handleVideoError}
               onLoadedData={() => {
-                console.log("Video loaded successfully");
                 setIsLoading(false);
               }}
             >

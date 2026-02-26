@@ -40,8 +40,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
                 setLoading(true);
                 setError(null);
 
-                console.log("🎬 Loading video from:", videoUrl);
-
                 // Get token from localStorage
                 const token = localStorage.getItem("accessToken");
 
@@ -62,8 +60,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
 
                 // Get video as blob
                 const blob = await response.blob();
-                console.log("✅ Video blob loaded:", blob.size, "bytes");
-
                 // Create object URL
                 objectUrl = URL.createObjectURL(blob);
 
@@ -109,7 +105,7 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
                     }
                 }
             } catch (err) {
-                console.log("No previous progress found");
+                console.log("error: ", err);
             }
         };
 
@@ -123,7 +119,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
         if (videoElement && blobUrl && resumeTime > 0) {
             const handleCanPlay = () => {
                 videoElement.currentTime = resumeTime;
-                console.log("▶️ Resuming from:", resumeTime);
                 videoElement.removeEventListener('canplay', handleCanPlay);
             };
 
@@ -147,8 +142,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
                         watchedPercentage: percentage,
                         currentTime,
                     });
-
-                    console.log("💾 Progress saved:", percentage.toFixed(1) + "%");
                 } catch (err) {
                     console.error("Failed to save progress:", err);
                 }
@@ -168,68 +161,28 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
         if (!videoElement || !blobUrl) return;
 
         const handleCanPlay = () => {
-            console.log("✅ Video can start playing");
             setBuffering(false);
         };
 
         const handleLoadedMetadata = () => {
             const videoDuration = videoElement.duration;
-            console.log("📊 Video metadata loaded, duration:", videoDuration);
             if (videoDuration && !isNaN(videoDuration) && isFinite(videoDuration)) {
                 setDuration(videoDuration);
             }
         };
 
         const handleWaiting = () => {
-            console.log("⏳ Buffering...");
             setBuffering(true);
         };
 
         const handlePlaying = () => {
-            console.log("▶️ Video playing");
             setBuffering(false);
             setIsPlaying(true);
         };
 
         const handlePause = () => {
-            console.log("⏸️ Video paused");
             setIsPlaying(false);
         };
-
-        // const handleTimeUpdate = () => {
-        //     const current = videoElement.currentTime;
-        //     const videoDuration = videoElement.duration;
-
-        //     // Update duration if not set yet
-        //     if ((!duration || duration === 0) && videoDuration && !isNaN(videoDuration) && isFinite(videoDuration)) {
-        //         console.log("📊 Setting duration from timeupdate:", videoDuration);
-        //         setDuration(videoDuration);
-        //     }
-
-        //     if (!videoDuration || isNaN(videoDuration) || !isFinite(videoDuration)) {
-        //         console.warn("⚠️ Invalid duration:", videoDuration);
-        //         return;
-        //     }
-
-        //     // Update current time
-        //     if (current !== currentTime) {
-        //         setCurrentTime(current);
-        //     }
-
-        //     // Track maximum watched time (user can't skip forward)
-        //     if (current > maxWatchedTime) {
-        //         setMaxWatchedTime(current);
-        //     }
-
-        //     // Calculate watched percentage
-        //     const percentage = (current / videoDuration) * 100;
-        //     setWatchedPercentage(percentage);
-
-        //     // Mark video as complete when 90% watched
-        //     if (percentage >= 90 && onComplete) {
-        //         onComplete({ title, videoUrl });
-        //     }
-        // };
 
         const handleTimeUpdate = () => {
             const current = videoElement.currentTime;
@@ -237,7 +190,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
 
             // Update duration if not set yet
             if ((!duration || duration === 0) && videoDuration && !isNaN(videoDuration) && isFinite(videoDuration)) {
-                console.log("📊 Setting duration from timeupdate:", videoDuration);
                 setDuration(videoDuration);
             }
 
@@ -267,7 +219,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
         };
 
         const handleEnded = () => {
-            console.log("✅ Video ended");
             setIsPlaying(false);
             setShowPlayButton(true);
 
@@ -544,7 +495,6 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
                     currentTime,
                 });
 
-                console.log("💾 Final progress saved on close");
             } catch (err) {
                 console.error("Failed to save progress on close:", err);
             }
@@ -587,9 +537,7 @@ function StudentVideoplayer({ videoUrl, title, onClose, videoId, courseId, onErr
                 watchedPercentage: percentage,
                 currentTime: duration,
             });
-
-            console.log("✅ Video marked as complete");
-            showSuccess("Video completed! 🎉");
+            showSuccess("Video completed! ");
 
             if (onComplete) {
                 onComplete({ videoId, title });

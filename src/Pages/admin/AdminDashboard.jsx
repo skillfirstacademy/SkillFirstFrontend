@@ -25,8 +25,6 @@ const AdminDashboard = () => {
         adminApi.get("/admin/enrollments"),
       ]);
 
-      console.log("enrollments", enrollmentStatsRes.data.data);
-
       setUsers(usersRes.data);
       setCourses(coursesRes.data);
       setStats(enrollmentStatsRes.data.data);

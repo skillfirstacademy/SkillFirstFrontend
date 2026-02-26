@@ -20,9 +20,7 @@ export const useSessionValidator = () => {
         // Make a lightweight API call to verify session
         await api.get('/validate-session');
       } catch (error) {
-        if (error.response?.status === 401 && error.response?.data?.code === 'DEVICE_MISMATCH') {
-          console.log('🔴 Session invalidated - logged in from another device');
-          
+        if (error.response?.status === 401 && error.response?.data?.code === 'DEVICE_MISMATCH') {          
           // Clear auth data
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');

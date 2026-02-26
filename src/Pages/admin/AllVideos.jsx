@@ -136,11 +136,8 @@ function AllVideos() {
   };
 
   const handleVideoClick = (video) => {
-    console.log("Playing video:", video);
     setPlayingVideo(video);
   };
-  console.log("edi", editingVideo)
-
   const handleEditSubmit = async (e) => {
     e.preventDefault();
 
@@ -597,7 +594,7 @@ function AllVideos() {
       {/* Video Player Modal */}
       {playingVideo && (
         <VideoPlayer
-          videoUrl={`https://skillfirstbackend.onrender.com/api/videos/${playingVideo._id}/stream`}
+          videoUrl={`http://video-api.skillfirstacademy.com/api/videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
           onClose={() => setPlayingVideo(null)}
           onError={(err) => {

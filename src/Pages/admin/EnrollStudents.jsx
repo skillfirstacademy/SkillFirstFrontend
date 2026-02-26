@@ -32,7 +32,6 @@ function EnrollStudents() {
   const fetchAllEnrollments = async () => {
     try {
       const res = await adminApi.get("/admin/enrollments");
-      console.log("All enrollments response:", res.data);
       setEnrollments(res.data.data || res.data || []);
     } catch (err) {
       showError("Failed to load enrollments");
@@ -55,7 +54,6 @@ function EnrollStudents() {
   const fetchAdminEnrollments = async () => {
     try {
       const res = await adminApi.get("/admin/enrollments/by-admin");
-      console.log("Admin enrollments response:", res.data);
       setAdminEnrollments(res.data.data || res.data || []);
     } catch (err) {
       showError("Failed to load admin enrollments");

@@ -45,8 +45,6 @@ function ViewStudent() {
         try {
             const res = await adminApi.get(`/users/${id}`);
             setData(res.data);
-            // console.log("first", res.data.student);
-
             // Format date for input field (YYYY-MM-DD)
             const dobValue = res.data.student?.dob
                 ? res.data.student.dob.slice(0, 10)

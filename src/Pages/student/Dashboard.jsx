@@ -36,8 +36,6 @@ const Dashboard = () => {
   const fetchEnrollments = async () => {
     try {
       const res = await adminApi.get("/students/my-courses");
-      console.log("Enrollments response:", res.data);
-
       if (!res.data?.enrollments || res.data.enrollments.length === 0) {
         setEnrollments([]);
         setSelectedEnrollment(null);

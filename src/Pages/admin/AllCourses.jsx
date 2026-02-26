@@ -139,18 +139,18 @@ function AllCourses() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {courses.map((course) => (
               <div
-  key={course._id}
-  onClick={(e) => {
-    // Prevent navigation if clicking on buttons
-    if (e.target.closest('button')) return;
-    handleOpenCourseDetail(course._id);
-  }}
-  className="relative group border border-purple-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-purple-50 cursor-pointer"
->
+                key={course._id}
+                onClick={(e) => {
+                  // Prevent navigation if clicking on buttons
+                  if (e.target.closest('button')) return;
+                  handleOpenCourseDetail(course._id);
+                }}
+                className="relative group border border-purple-200 rounded-xl p-6 hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-purple-50 cursor-pointer"
+              >
                 {/* Thumbnail */}
                 {course.thumbnail ? (
                   <img
-                    src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
+                    src={`http://video-api.skillfirstacademy.com${course.thumbnail}`}
                     alt={course.title}
                     className="w-full h-40 object-cover rounded-lg mb-4 shadow-md"
                   />
@@ -194,11 +194,10 @@ function AllCourses() {
                   <p>
                     <strong>Type:</strong>{" "}
                     <span
-                      className={`px-2 py-1 rounded ${
-                        course.isPaid
+                      className={`px-2 py-1 rounded ${course.isPaid
                           ? "bg-purple-700 text-white"
                           : "bg-green-100 text-green-700"
-                      }`}
+                        }`}
                     >
                       {course.isPaid ? "Paid" : "Free"}
                     </span>
@@ -213,11 +212,10 @@ function AllCourses() {
                   <p>
                     <strong>Status:</strong>{" "}
                     <span
-                      className={`px-2 py-1 rounded ${
-                        course.isActive
+                      className={`px-2 py-1 rounded ${course.isActive
                           ? "bg-green-100 text-green-700"
                           : "bg-gray-200 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {course.isActive ? "Active" : "Inactive"}
                     </span>

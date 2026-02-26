@@ -66,7 +66,6 @@ function CourseDetailsPage() {
   const fetchTestAttempts = async () => {
     try {
       const res = await adminApi.get("/test-attempt/my");
-      // console.log("testatt", res.data)
       setTestAttempts(res.data || []);
     } catch (err) {
       console.error("Failed to fetch test attempts");
@@ -88,7 +87,6 @@ function CourseDetailsPage() {
         attempt.isPassed === true
     );
     
-    // console.log(`Checking test passed for video ${videoId}:`, passed);
     return passed;
   };
 
@@ -106,17 +104,8 @@ function CourseDetailsPage() {
 
   const canUnlockNextVideo = (videoIndex) => {
     if (!isEnrolled || !enrollmentData) return false;
-    
-    // Backend controls unlocking via currentDay (updated by cron job)
-    // Each video unlocks one day at a time
     const currentDay = enrollmentData.progress?.currentDay || 1;
-    
-    // Video at index 0 requires currentDay >= 1
-    // Video at index 1 requires currentDay >= 2, etc.
-    const requiredDay = videoIndex + 1;
-    
-    // console.log(`Video ${videoIndex} requires day ${requiredDay}, current day: ${currentDay}`);
-    
+    const requiredDay = videoIndex + 1;    
     return currentDay >= requiredDay;
   };
 
@@ -222,7 +211,6 @@ function CourseDetailsPage() {
         setEnrollmentData(null);
       }
     } catch (error) {
-      // console.log("Not enrolled or error checking enrollment");
       setIsEnrolled(false);
       setEnrollmentData(null);
     }
@@ -263,9 +251,6 @@ function CourseDetailsPage() {
         courseLevel: course.level,
         courseAmount: course.isPaid ? course.price : 0,
       };
-
-      // console.log("📧 Sending enrollment request:", enrollmentData);
-
       const response = await adminApi.post(
         "/students/buy/enroll",
         enrollmentData
@@ -563,7 +548,7 @@ function CourseDetailsPage() {
             <div className="flex justify-center">
               {course.thumbnail ? (
                 <img
-                  src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
+                  src={`http://video-api.skillfirstacademy.com${course.thumbnail}`}
                   alt={course.title}
                   className="rounded-2xl shadow-2xl max-w-full h-auto object-cover"
                 />
@@ -608,7 +593,6 @@ function CourseDetailsPage() {
             {/* Additional Stats - Always Show */}
             {enrollmentData.progress && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {console.log("first", enrollmentData)}
                 <div className="bg-purple-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-purple-600">{enrollmentData.progress.streak || 0}</div>
                   <div className="text-sm text-gray-600">Day Streak</div>
@@ -975,7 +959,7 @@ function CourseDetailsPage() {
       {/* VIDEO PLAYER MODAL */}
       {playingVideo && (
         <StudentVideoplayer
-          videoUrl={`https://skillfirstbackend.onrender.com/api/videos/${playingVideo._id}/stream`}
+          videoUrl={`${adminApi}videos/${playingVideo._id}/stream`}
           title={playingVideo.title}
           videoId={playingVideo._id}
           courseId={courseId}
@@ -984,7 +968,6 @@ function CourseDetailsPage() {
             checkEnrollmentStatus(courseId);
           }}
           onComplete={(data) => {
-            console.log("Video completed:", data);
             setCompletedVideos(prev => new Set([...prev, data.videoId]));
             checkEnrollmentStatus(courseId);
             showSuccess("Great job! Video completed 🎉");

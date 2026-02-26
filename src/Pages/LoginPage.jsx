@@ -20,7 +20,7 @@ function LoginPage() {
   const [showConflictModal, setShowConflictModal] = useState(false);
 
   const handleGoogleSignIn = () => {
-    window.location.href = "https://skillfirstbackend.onrender.com/api/users/google";
+    window.location.href = "http://video-api.skillfirstacademy.com/api/users/google";
   };
 
   const getDeviceId = () => {
@@ -35,11 +35,6 @@ function LoginPage() {
   const performLogin = async (forceLogin = false) => {
     const deviceId = getDeviceId();
 
-    console.log("🔵 FRONTEND - Attempting login with:", { 
-      email, 
-      deviceId, 
-      forceLogin 
-    });
 
     try {
       const res = await api.post("/login", {
@@ -48,8 +43,6 @@ function LoginPage() {
         deviceId,
         forceLogin,
       });
-
-      console.log("✅ FRONTEND - Login successful:", res.data);
 
       // ✅ Store both access token AND refresh token
       localStorage.setItem("accessToken", res.data.accessToken);
@@ -69,8 +62,6 @@ function LoginPage() {
       const redirectTo = location.state?.redirectTo;
 
       if (redirectTo) {
-        // User was trying to enroll in a course, redirect them to that course
-        console.log("🔄 Redirecting to course:", redirectTo);
         navigate(redirectTo);
       } else {
         // No redirect URL, use default navigation based on role
@@ -85,15 +76,8 @@ function LoginPage() {
         }
       }
     } catch (err) {
-      console.log("❌ FRONTEND - Login error:", {
-        status: err.response?.status,
-        code: err.response?.data?.code,
-        message: err.response?.data?.message
-      });
-
       // Check if it's a device conflict error
       if (err.response?.status === 403 && err.response?.data?.code === "DEVICE_CONFLICT") {
-        console.log("⚠️ FRONTEND - Device conflict detected, showing modal");
         setShowConflictModal(true);
       } else {
         const message = err.response?.data?.message || "Login failed";
@@ -117,7 +101,6 @@ function LoginPage() {
   };
 
   const handleForceLogin = async () => {
-    console.log("🔴 FRONTEND - User confirmed force login");
     setShowConflictModal(false);
     setLoading(true);
 
@@ -131,7 +114,6 @@ function LoginPage() {
   };
 
   const handleCancelForceLogin = () => {
-    console.log("⚪ FRONTEND - User cancelled force login");
     setShowConflictModal(false);
   };
 

@@ -2,11 +2,8 @@ import axios from "axios";
 import { showError } from "../Componnets/AppToaster";
 
 const adminApi = axios.create({
-  baseURL: "https://skillfirstbackend.onrender.com/api/",
+  baseURL: "http://video-api.skillfirstacademy.com/api/",
 });
-// const adminApi = axios.create({
-//   baseURL: "http://localhost:5000/api/",
-// });
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -75,7 +72,7 @@ adminApi.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "https://skillfirstbackend.onrender.com/api/users/refresh-token",
+          "http://video-api.skillfirstacademy.com/api/users/refresh-token",
           { refreshToken }
         );
 

@@ -7,6 +7,7 @@ import { loginSuccess } from "../Features/authSlice";
 import { showSuccess, showError } from "../Componnets/AppToaster";
 import eye from "../assets/eye.svg";
 import closeeye from "../assets/eye (2).svg";
+import adminApi from "../api/adminApi";
 
 function SignupPage() {
   const dispatch = useDispatch();
@@ -25,7 +26,7 @@ function SignupPage() {
 
   // ✅ Google signup (same as login)
   const handleGoogleSignUp = () => {
-    window.location.href = "https://skillfirstbackend.onrender.com/api/users/google";
+    window.location.href = "http://video-api.skillfirstacademy.com/api/users/google";
   };
 
   // ✅ Signup submit

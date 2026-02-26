@@ -109,9 +109,6 @@ function AddTest() {
           correctAnswer: Number(q.correctAnswer)
         }))
       };
-
-      console.log("Sending test data:", payload); // Debug log
-
       await adminApi.post(`/tests/video/${selectedVideo}`, payload);
 
       showSuccess("Test created successfully!");

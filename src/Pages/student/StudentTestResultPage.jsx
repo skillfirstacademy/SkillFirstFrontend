@@ -14,7 +14,6 @@ function StudentTestAttemptsPage() {
     try {
       const res = await adminApi.get("/test-attempt/my");
       setAttempts(res.data || []);
-      console.log(res)
     } catch (err) {
       showError("Failed to load test attempts");
     } finally {

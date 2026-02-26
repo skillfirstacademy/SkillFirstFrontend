@@ -118,7 +118,7 @@ function CourseIntroSection() {
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredCourses.map((course, index) => (
+          {filteredCourses.map((course, index) => (     
             <div
               key={course._id}
               className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
@@ -128,7 +128,7 @@ function CourseIntroSection() {
                 {course.thumbnail ? (
                   <img
                     // src={`http://localhost:5000${course.thumbnail}`}
-                    src={`https://skillfirstbackend.onrender.com${course.thumbnail}`}
+                    src={`http://video-api.skillfirstacademy.com${course.thumbnail}`}
                     alt={course.title}
                     className="w-full h-full object-cover"
                   />

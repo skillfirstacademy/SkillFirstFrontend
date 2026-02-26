@@ -109,7 +109,6 @@ function AllStudents() {
     }
 
     setEnrolling(true);
-    console.log("data", parseFloat(customPrice),)
     try {
       await adminApi.post("/admin/enroll/student", {
         userId: selectedStudent._id,

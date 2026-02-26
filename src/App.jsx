@@ -155,11 +155,10 @@ useEffect(() => {
       // Update LS only if changed
       if (storedUser !== JSON.stringify(userData)) {
         localStorage.setItem("user", JSON.stringify(userData));
-        console.log("User updated in localStorage");
       }
 
     } catch (err) {
-      console.log("User refresh failed", err);
+      console.log(err);
     }
   }, 10000); // testing interval
 
