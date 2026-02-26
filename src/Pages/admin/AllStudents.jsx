@@ -45,7 +45,7 @@ function AllStudents() {
     setDeletingStudentId(studentId);
 
     try {
-      await adminApi.delete(`/users/${studentId}`);
+      await adminApi.delete(`/admin/users/${studentId}`);
       showSuccess("Student deleted successfully!");
       setStudents(students.filter((student) => student._id !== studentId));
     } catch (err) {
